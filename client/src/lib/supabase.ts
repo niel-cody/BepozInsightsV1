@@ -45,6 +45,29 @@ export const authStorage = {
 
 // Auth API functions
 export const authAPI = {
+  login: async (email: string): Promise<{ user: AuthUser; accessToken: string } | null> => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+      
+      const result = await response.json();
+      authStorage.setToken(result.accessToken);
+      authStorage.setUser(result.user);
+      
+      return result;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return null;
+    }
+  },
+
   sendMagicLink: async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
       const response = await fetch('/api/auth/magic-link', {

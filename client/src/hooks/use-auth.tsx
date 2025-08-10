@@ -5,6 +5,7 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  login: (email: string) => Promise<{ success: boolean; message?: string }>;
   sendMagicLink: (email: string) => Promise<{ success: boolean; message: string }>;
   verifyMagicLink: (token: string) => Promise<boolean>;
 }
@@ -40,6 +41,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await authAPI.sendMagicLink(email);
   };
 
+  const login = async (email: string) => {
+    try {
+      const result = await authAPI.login(email);
+      if (result && result.user) {
+        setUser(result.user);
+        return { success: true };
+      }
+      return { success: false, message: "Login failed" };
+    } catch (error) {
+      console.error('Login failed:', error);
+      return { success: false, message: "Login failed" };
+    }
+  };
+
   const verifyMagicLink = async (token: string) => {
     try {
       const result = await authAPI.verifyMagicLink(token);
@@ -59,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       signOut,
+      login,
       sendMagicLink,
       verifyMagicLink,
     }}>

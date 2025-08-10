@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ChartLine, Loader2, Mail } from "lucide-react";
+import { ChartLine, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("demo@bepoz.com");
   const [loading, setLoading] = useState(false);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const { sendMagicLink } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -22,24 +21,24 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const result = await sendMagicLink(email);
+      const result = await login(email);
       if (result.success) {
-        setMagicLinkSent(true);
         toast({
-          title: "Magic link sent!",
-          description: "Check your email for a secure login link.",
+          title: "Welcome to Bepoz AI!",
+          description: "Successfully logged in to your dashboard.",
         });
+        setLocation("/dashboard");
       } else {
         toast({
           title: "Error",
-          description: result.message,
+          description: result.message || "Login failed. Please try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to send magic link. Please try again.",
+        description: "Login failed. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -47,41 +46,7 @@ export default function LoginPage() {
     }
   };
 
-  if (magicLinkSent) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="bg-primary rounded-full w-16 h-16 flex items-center justify-center mx-auto">
-                <Mail className="text-white text-2xl" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900" data-testid="text-magic-link-sent">Check your email</h2>
-                <p className="text-slate-600 mt-2">
-                  We've sent a secure login link to <strong>{email}</strong>
-                </p>
-              </div>
-              <p className="text-sm text-slate-500">
-                Click the link in your email to access your dashboard. The link will expire in 15 minutes.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setMagicLinkSent(false);
-                  setEmail("");
-                }}
-                className="w-full mt-4"
-                data-testid="button-back-to-login"
-              >
-                Back to login
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
@@ -122,22 +87,22 @@ export default function LoginPage() {
               type="submit"
               className="w-full"
               disabled={loading || !email.trim()}
-              data-testid="button-send-magic-link"
+              data-testid="button-login"
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
+                  Signing in...
                 </>
               ) : (
-                "Send Magic Link"
+                "Sign In"
               )}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-600">
-              We'll send you a secure login link via email
+              Enter demo@bepoz.com to explore the dashboard
             </p>
           </div>
         </CardContent>

@@ -54,6 +54,51 @@ const magicLinkTokens = new Map<string, { email: string; expires: number }>();
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Auth routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      
+      // Check if user exists, create if not (for demo purposes)
+      let user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Create new user for this demo
+        user = await storage.createUser({
+          email,
+          name: email.split('@')[0],
+          role: 'manager',
+          locationAccess: ["loc-1", "loc-2", "loc-3"], // Give access to all locations for demo
+        });
+      }
+
+      // Update last login
+      await storage.updateUserLastLogin(user.id);
+
+      // Generate JWT
+      const accessToken = jwt.sign(
+        { userId: user.id, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          locationAccess: user.locationAccess || [],
+        },
+        accessToken,
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : 'Login failed' 
+      });
+    }
+  });
+
   app.post("/api/auth/magic-link", async (req, res) => {
     try {
       const { email } = z.object({ email: z.string().email() }).parse(req.body);
