@@ -26,7 +26,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home, current: location === "/dashboard" },
-    { name: "Analytics", href: "/analytics", icon: BarChart3, current: location === "/analytics" },
+    { name: "Sales Trends", href: "/sales-trends", icon: BarChart3, current: location === "/sales-trends" },
     { name: "Reports", href: "/reports", icon: FileText, current: location === "/reports" },
     { name: "Settings", href: "/settings", icon: Settings, current: location === "/settings" },
   ];

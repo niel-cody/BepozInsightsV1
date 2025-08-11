@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
+import SalesTrendsPage from "@/pages/sales-trends";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRoutes() {
@@ -22,6 +23,7 @@ function AuthenticatedRoutes() {
   return (
     <Switch>
       <Route path="/dashboard" component={DashboardPage} />
+      <Route path="/sales-trends" component={SalesTrendsPage} />
       <Route path="/" component={DashboardPage} />
       <Route component={NotFound} />
     </Switch>
