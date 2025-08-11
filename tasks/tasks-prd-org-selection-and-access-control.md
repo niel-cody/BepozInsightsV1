@@ -43,23 +43,28 @@
   - [x] 2.5 Document token shape and rotation behavior
 
 - [ ] 3.0 Organization APIs (`/api/orgs`, `/api/orgs/select`)
-  - [ ] 3.1 GET `/api/orgs`: return organizations for user with role and `is_default`
-  - [ ] 3.2 POST `/api/orgs/select`: body validation, membership check, issue token with `org_id`
-  - [ ] 3.3 Add basic rate limiting and audit log (userId, orgId, latency) for selection
+  - [x] 3.1 GET `/api/orgs`: return organizations for user with role and `is_default`
+  - [x] 3.2 POST `/api/orgs/select`: body validation, membership check, issue token with `org_id`
+  - [x] 3.3 Add basic rate limiting and audit log (userId, orgId, latency) for selection
   - [ ] 3.4 Unit tests for membership checks and error states
 
 - [ ] 4.0 Client Org Selection Flow (post‑login modal or page)
   - [ ] 4.1 Build `choose-org` flow (blocking Dialog or page) using shadcn components
-  - [ ] 4.2 Fetch orgs post‑auth; handle 0/1/>1 org logic; auto‑select if one
-  - [ ] 4.3 On select: call `/api/orgs/select`, persist locally, refresh context
+  - [x] 4.1 Build `choose-org` flow (blocking Dialog or page) using shadcn components
+  - [x] 4.2 Fetch orgs post‑auth; handle 0/1/>1 org logic; auto‑select if one
+  - [x] 4.3 On select: call `/api/orgs/select`, persist locally, refresh context
   - [ ] 4.4 Loading and error states; accessible focus management
+  - [x] 4.4 Loading and error states; accessible focus management
   - [ ] 4.5 Minimal aesthetic per Jony Ive / Dieter Rams
+  - [x] 4.5 Minimal aesthetic per Jony Ive / Dieter Rams
 
 - [ ] 5.0 Header Org Switcher (in‑app switching)
-  - [ ] 5.1 Create `OrgSwitcher` dropdown in header; show current org name + initials/avatar
-  - [ ] 5.2 Selecting org calls `/api/orgs/select`, updates local state, and re‑scopes data
+  - [x] 5.1 Create `OrgSwitcher` dropdown in header; show current org name + initials/avatar
+  - [x] 5.2 Selecting org calls `/api/orgs/select`, updates local state, and re‑scopes data
   - [ ] 5.3 Invalidate and refetch react‑query caches on switch
+  - [x] 5.3 Invalidate and refetch react‑query caches on switch
   - [ ] 5.4 Keyboard navigation and ARIA roles
+  - [x] 5.4 Keyboard navigation and ARIA roles
 
 - [ ] 6.0 Route Guard & Data Scoping (selectedOrgId required)
   - [ ] 6.1 Org context/provider exposing `selectedOrgId` and switch method

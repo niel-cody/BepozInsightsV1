@@ -62,6 +62,21 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
 const magicLinkTokens = new Map<string, { email: string; expires: number }>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Simple in-memory rate limiter (per user + route key)
+  const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+  const checkRateLimit = (key: string, limit = 5, windowMs = 60_000): boolean => {
+    const now = Date.now();
+    const bucket = rateBuckets.get(key);
+    if (!bucket || now > bucket.resetAt) {
+      rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+      return true;
+    }
+    if (bucket.count < limit) {
+      bucket.count += 1;
+      return true;
+    }
+    return false;
+  };
   // Helper: get default org for a user (is_default true else first active)
   const getDefaultOrgIdForUser = async (userId: string): Promise<string | undefined> => {
     try {
@@ -222,6 +237,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Organization selection: validate membership and issue new token with org_id
   app.post("/api/orgs/select", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
+      const rlKey = `${req.user!.id}:orgs.select`;
+      if (!checkRateLimit(rlKey, 5, 60_000)) {
+        return res.status(429).json({ message: 'Too many org switch attempts, please try again shortly' });
+      }
       const { organizationId } = z.object({ organizationId: z.string().uuid() }).parse(req.body);
 
       // Validate membership
@@ -247,6 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Attach RLS claims immediately for this request
       await setRLSClaims(organizationId, 'authenticated', req.user!.id);
 
+      console.log('[ORG][select]', { userId: req.user!.id, organizationId });
       res.json({ accessToken: newToken, organizationId });
     } catch (error) {
       return res.status(400).json({ message: error instanceof Error ? error.message : 'Invalid request' });
@@ -264,6 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         order by uo.is_default desc, o.name asc
       `);
       const rows = Array.isArray(result) ? result : (result as any).rows;
+      console.log('[ORG][list]', { userId: req.user?.id, count: rows?.length || 0 });
       res.json(rows || []);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch organizations' });

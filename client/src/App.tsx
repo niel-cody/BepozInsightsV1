@@ -9,6 +9,7 @@ import DashboardPage from "@/pages/dashboard";
 import SalesTrendsPage from "@/pages/sales-trends";
 import AIChatPage from "@/pages/ai-chat";
 import NotFound from "@/pages/not-found";
+import ChooseOrgPage from "@/pages/choose-org";
 
 function AuthenticatedRoutes() {
   const { user, loading } = useAuth();
@@ -19,6 +20,11 @@ function AuthenticatedRoutes() {
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  // If user has no org in token, force choose-org flow
+  if (!user.orgId) {
+    return <ChooseOrgPage />;
   }
 
   return (

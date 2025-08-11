@@ -8,6 +8,7 @@ export type AuthUser = {
   name?: string;
   role: string;
   locationAccess: string[];
+  orgId?: string;
 };
 
 export type AuthSession = {

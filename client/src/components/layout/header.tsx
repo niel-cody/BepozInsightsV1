@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OrgSwitcher } from "./org-switcher";
 
 interface HeaderProps {
   title: string;
@@ -18,18 +19,21 @@ export function Header({ title, subtitle }: HeaderProps) {
           </div>
         </div>
         
-        {/* Quick AI Chat Button */}
-        <Link href="/ai-chat">
-          <Button 
-            size="sm" 
-            className="relative flex items-center gap-2 text-white border-0 overflow-hidden group animate-shimmer hover:shadow-lg transition-shadow duration-300"
-            data-testid="button-quick-ai-chat"
-          >
-            <div className="absolute inset-0 animate-shimmer-sweep"></div>
-            <Sparkles className="w-4 h-4 animate-pulse" />
-            AI Chat
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <OrgSwitcher />
+          {/* Quick AI Chat Button */}
+          <Link href="/ai-chat">
+            <Button 
+              size="sm" 
+              className="relative flex items-center gap-2 text-white border-0 overflow-hidden group animate-shimmer hover:shadow-lg transition-shadow duration-300"
+              data-testid="button-quick-ai-chat"
+            >
+              <div className="absolute inset-0 animate-shimmer-sweep"></div>
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              AI Chat
+            </Button>
+          </Link>
+        </div>
       </div>
     </header>
   );
