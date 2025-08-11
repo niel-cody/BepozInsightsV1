@@ -109,6 +109,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             where uo.user_id = ${userId}::text and uo.organization_id = o.id
           );
       `);
+      await db.execute(sql`
+        insert into public.user_organizations (user_id, organization_id, role, is_default)
+        select ${email}::text, o.id, 'manager', false
+        from public.organizations o
+        where o.is_active = true
+          and not exists (
+            select 1 from public.user_organizations uo
+            where uo.user_id = ${email}::text and uo.organization_id = o.id
+          );
+      `);
     } catch (e) {
       console.error('Ensure demo memberships failed:', e);
     }
