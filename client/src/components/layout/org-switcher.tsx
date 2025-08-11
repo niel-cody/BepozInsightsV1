@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronsUpDown } from "lucide-react";
 import { authStorage } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
 
 type Org = { id: string; name: string; slug?: string; role: string; is_default: boolean };
@@ -12,6 +13,7 @@ export function OrgSwitcher() {
   const [current, setCurrent] = useState<Org | null>(null);
   const [open, setOpen] = useState(false);
   const token = authStorage.getToken();
+  const { refresh } = useAuth();
 
   useEffect(() => {
     const load = async () => {
@@ -41,6 +43,8 @@ export function OrgSwitcher() {
       setCurrent(org);
       // Invalidate all cached queries to prevent cross-org bleed
       queryClient.clear();
+      // Refresh the user context so orgId is reflected
+      await refresh();
       // Optionally, you can navigate or emit an event; most pages will refetch
     } catch {}
   };

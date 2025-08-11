@@ -152,6 +152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: user.name,
           role: user.role,
           locationAccess: user.locationAccess || [],
+          // Include orgId when available so the client can skip org selection
+          ...(defaultOrgId ? { orgId: defaultOrgId } : {}),
         },
         accessToken,
       });
@@ -241,6 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: user.name,
           role: user.role,
           locationAccess: user.locationAccess || [],
+          ...(defaultOrgId ? { orgId: defaultOrgId } : {}),
         },
         accessToken,
       });

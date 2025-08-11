@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (email: string) => Promise<{ success: boolean; message?: string }>;
   sendMagicLink: (email: string) => Promise<{ success: boolean; message: string }>;
   verifyMagicLink: (token: string) => Promise<boolean>;
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,6 +70,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const currentUser = await authAPI.getCurrentUser();
+      setUser(currentUser);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -77,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       sendMagicLink,
       verifyMagicLink,
+      refresh,
     }}>
       {children}
     </AuthContext.Provider>

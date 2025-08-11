@@ -112,3 +112,4 @@ Primary data source for v1: Supabase tables (starting with `public.till_summarie
 5. Do we need a query history for managers in v1.1 (to be shown on `/insights`)?
 
 
+

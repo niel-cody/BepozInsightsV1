@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { authStorage } from "@/lib/supabase";
@@ -13,6 +14,7 @@ export default function ChooseOrgPage() {
   const [, navigate] = useLocation();
   const token = authStorage.getToken();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const { refresh } = useAuth();
 
   useEffect(() => {
     const loadOrgs = async () => {
@@ -50,8 +52,9 @@ export default function ChooseOrgPage() {
       if (!res.ok) throw new Error('Failed to select organization');
       const { accessToken } = await res.json();
       authStorage.setToken(accessToken);
+      // Refresh user context so orgId is present and routes resolve
+      await refresh();
       navigate('/');
-      window.location.reload();
     } catch {
       setSubmitting(false);
     }
