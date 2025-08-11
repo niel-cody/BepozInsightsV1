@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateSQL, generateInsightFromData, runAgentQuery } from "./services/openai";
+import { generateSQL, generateInsightFromData } from "./services/openai";
 import { setRLSClaims } from "./services/supabase";
 import { db } from "./services/supabase";
 import { sql } from "drizzle-orm";
@@ -101,22 +101,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       await db.execute(sql`
         insert into public.user_organizations (user_id, organization_id, role, is_default)
-        select ${userId}::text, o.id, 'manager', false
+        select ${userId}, o.id, 'manager', false
         from public.organizations o
         where o.is_active = true
           and not exists (
             select 1 from public.user_organizations uo
-            where uo.user_id = ${userId}::text and uo.organization_id = o.id
-          );
-      `);
-      await db.execute(sql`
-        insert into public.user_organizations (user_id, organization_id, role, is_default)
-        select ${email}::text, o.id, 'manager', false
-        from public.organizations o
-        where o.is_active = true
-          and not exists (
-            select 1 from public.user_organizations uo
-            where uo.user_id = ${email}::text and uo.organization_id = o.id
+            where uo.user_id = ${userId} and uo.organization_id = o.id
           );
       `);
     } catch (e) {

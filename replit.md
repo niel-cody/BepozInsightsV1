@@ -16,7 +16,7 @@ The frontend is built with React and TypeScript, utilizing a modern component-ba
 - **Styling**: Tailwind CSS with shadcn/ui component library for consistent design system
 - **State Management**: TanStack Query (React Query) for server state management and caching
 - **Routing**: Wouter for lightweight client-side routing with dedicated pages for Dashboard, Sales Trends, and AI Chat
-- **Authentication**: Custom JWT-based authentication with direct login using demo@bepoz.com
+- **Authentication**: Custom JWT-based authentication with direct login using demo@bepoz.com (fixed organization mapping issue)
 - **Charts/Visualization**: Chart.js for data visualization and analytics charts
 - **AI Chat Interface**: Dedicated conversation page with message history and quick access from header
 
