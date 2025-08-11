@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,46 +14,48 @@ export default function ChooseOrgPage() {
   const [, navigate] = useLocation();
   const token = authStorage.getToken();
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const { refresh } = useAuth();
+  const { refresh, signOut } = useAuth();
 
-  useEffect(() => {
-    const loadOrgs = async () => {
-      try {
-        setError(null);
-        const res = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${token}` } });
-        if (res.status === 401) {
-          // Attempt silent re-auth using stored email, then retry once
-          const storedUser = authStorage.getUser();
-          if (storedUser?.email) {
-            const relogin = await authAPI.login(storedUser.email);
-            if (relogin?.accessToken) {
-              const retry = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${relogin.accessToken}` } });
-              if (retry.ok) {
-                const data: Org[] = await retry.json();
-                setOrgs(data);
-                if (data.length === 1) onSelect(data[0]);
-                return;
-              }
+  const loadOrgs = useCallback(async () => {
+    if (!token) return;
+    try {
+      setError(null);
+      const res = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401) {
+        // Attempt silent re-auth using stored email, then retry once
+        const storedUser = authStorage.getUser();
+        if (storedUser?.email) {
+          const relogin = await authAPI.login(storedUser.email);
+          if (relogin?.accessToken) {
+            const retry = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${relogin.accessToken}` } });
+            if (retry.ok) {
+              const data: Org[] = await retry.json();
+              setOrgs(data);
+              if (data.length === 1) onSelect(data[0]);
+              return;
             }
           }
-          authStorage.removeToken();
-          navigate('/');
-          return;
         }
-        if (!res.ok) throw new Error(await res.text());
-        const data: Org[] = await res.json();
-        setOrgs(data);
-        // Auto-select when only one org
-        if (data.length === 1) {
-          onSelect(data[0]);
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load organizations');
-        setOrgs([]);
+        authStorage.removeToken();
+        navigate('/');
+        return;
       }
-    };
-    if (token) loadOrgs();
+      if (!res.ok) throw new Error(await res.text());
+      const data: Org[] = await res.json();
+      setOrgs(data);
+      // Auto-select when only one org
+      if (data.length === 1) {
+        onSelect(data[0]);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load organizations');
+      setOrgs([]);
+    }
   }, [token]);
+
+  useEffect(() => {
+    if (token) loadOrgs();
+  }, [token, loadOrgs]);
 
   useEffect(() => {
     // Focus heading for screen readers once mounted
@@ -83,8 +85,17 @@ export default function ChooseOrgPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6" aria-busy={!orgs && !error}>
       <Card className="w-full max-w-lg border-slate-200 shadow-none">
         <CardContent className="p-6">
-          <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold tracking-tight text-slate-900 mb-2">Choose an organization</h1>
-          <p className="text-sm text-slate-500 mb-6">Select which organization you want to access.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold tracking-tight text-slate-900 mb-2">Choose an organization</h1>
+              <p className="text-sm text-slate-500">Select which organization you want to access.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={loadOrgs} aria-label="Refresh organizations">Refresh</Button>
+              <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate('/'); }} aria-label="Sign out and return to login">Sign out</Button>
+            </div>
+          </div>
+          <div className="h-4" />
 
           {!orgs && !error && (
             <div className="text-sm text-slate-500" role="status" aria-live="polite">Loading organizations…</div>
