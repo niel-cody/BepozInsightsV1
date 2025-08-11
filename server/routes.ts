@@ -34,35 +34,13 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    // Be resilient to memory resets: fall back to email lookup if id not found
-    let user = await storage.getUser(decoded.userId);
-    if (!user && decoded.email) {
-      user = await storage.getUserByEmail(decoded.email);
-      // Auto-heal in demo: if user vanished due to server restart, recreate from token
-      if (!user) {
-        try {
-          user = await storage.createUser({
-            email: decoded.email,
-            name: (decoded.email as string).split('@')[0],
-            role: 'manager',
-            locationAccess: ["loc-1", "loc-2", "loc-3"],
-            isActive: true,
-          } as any);
-          await storage.updateUserLastLogin(user.id);
-        } catch (_) {}
-      }
-    }
-    
-    if (!user || user.isActive === false) {
-      return res.status(401).json({ message: 'Invalid or inactive user' });
-    }
-
+    // Trust token as source of truth for identity in this app
     req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
+      id: decoded.userId || decoded.email,
+      email: decoded.email,
+      role: decoded.role || 'manager',
       orgId: (decoded as any).org_id,
-      locationAccess: user.locationAccess || [],
+      locationAccess: [],
     };
     // Best-effort: attach org_id to DB session for RLS
     if (req.user.orgId) {
@@ -120,63 +98,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
-  // Ensure demo user is mapped to all active orgs
-  const ensureDemoMemberships = async (userId: string, email: string) => {
-    if (email !== 'demo@bepoz.com') return;
-    try {
-      await db.execute(sql`
-        insert into public.user_organizations (user_id, organization_id, role, is_default)
-        select ${userId}, o.id, 'manager', false
-        from public.organizations o
-        where o.is_active = true
-          and not exists (
-            select 1 from public.user_organizations uo
-            where uo.user_id = ${userId} and uo.organization_id = o.id
-          );
-      `);
-    } catch (e) {
-      console.error('Ensure demo memberships failed:', e);
-    }
-  };
+  // No demo membership mapping
   
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email } = z.object({ email: z.string().email() }).parse(req.body);
       
-      // Check if user exists, create if not (for demo purposes)
-      let user = await storage.getUserByEmail(email);
-      
-      if (!user) {
-        // Create new user for this demo
-        user = await storage.createUser({
-          email,
-          name: email.split('@')[0],
-          role: 'manager',
-          locationAccess: ["loc-1", "loc-2", "loc-3"], // Give access to all locations for demo
-        });
-      }
-
-      // Update last login
-      await storage.updateUserLastLogin(user.id);
-
-      // If demo user, map to all orgs
-      await ensureDemoMemberships(user.id, email);
-
+      // App trusts email-based identity and org membership via user_organizations
+      const userId = email; // use email as stable user identifier
       // Determine default org
-      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
+      const defaultOrgId = await getDefaultOrgIdForUser(userId);
       // Generate JWT
-      const payload: any = { userId: user.id, email: user.email };
+      const payload: any = { userId, email };
       if (defaultOrgId) payload.org_id = defaultOrgId;
       const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
       res.json({
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          locationAccess: user.locationAccess || [],
+          id: userId,
+          email,
+          name: email.split('@')[0],
+          role: 'manager',
+          locationAccess: [],
           // Include orgId when available so the client can skip org selection
           ...(defaultOrgId ? { orgId: defaultOrgId } : {}),
         },
@@ -194,18 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email } = z.object({ email: z.string().email() }).parse(req.body);
       
-      // Check if user exists
-      let user = await storage.getUserByEmail(email);
-      
-      if (!user) {
-        // Create new user for this demo
-        user = await storage.createUser({
-          email,
-          name: email.split('@')[0],
-          role: 'manager',
-          locationAccess: [], // Will be set based on business logic
-        });
-      }
+      const userId = email;
 
       // Generate magic link token
       const token = crypto.randomBytes(32).toString('hex');
@@ -240,21 +173,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid or expired token' });
       }
 
-      const user = await storage.getUserByEmail(tokenData.email);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      // Update last login
-      await storage.updateUserLastLogin(user.id);
-
-      // If demo user, map to all orgs
-      await ensureDemoMemberships(user.id, user.email);
+      const userId = tokenData.email;
 
       // Determine default org
-      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
+      const defaultOrgId = await getDefaultOrgIdForUser(userId);
       // Generate JWT
-      const payload: any = { userId: user.id, email: user.email };
+      const payload: any = { userId, email: tokenData.email };
       if (defaultOrgId) payload.org_id = defaultOrgId;
       const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
@@ -263,11 +187,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          locationAccess: user.locationAccess || [],
+          id: userId,
+          email: tokenData.email,
+          name: tokenData.email.split('@')[0],
+          role: 'manager',
+          locationAccess: [],
           ...(defaultOrgId ? { orgId: defaultOrgId } : {}),
         },
         accessToken,
