@@ -1,7 +1,6 @@
 import { Link } from "wouter";
-import { MessageCircle, Plus } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Filters } from "@/components/dashboard/filters";
 
 interface HeaderProps {
   title: string;
@@ -19,23 +18,18 @@ export function Header({ title, subtitle }: HeaderProps) {
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          {/* Quick AI Chat Button */}
-          <Link href="/ai-chat">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-2"
-              data-testid="button-quick-ai-chat"
-            >
-              <MessageCircle className="w-4 h-4" />
-              AI Chat
-            </Button>
-          </Link>
-          
-          {/* Filters Bar */}
-          <Filters />
-        </div>
+        {/* Quick AI Chat Button */}
+        <Link href="/ai-chat">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+            data-testid="button-quick-ai-chat"
+          >
+            <MessageCircle className="w-4 h-4" />
+            AI Chat
+          </Button>
+        </Link>
       </div>
     </header>
   );
