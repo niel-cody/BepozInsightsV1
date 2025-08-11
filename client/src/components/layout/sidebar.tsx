@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/use-auth";
+import { useOrg } from "@/hooks/use-org";
 import { cn } from "@/lib/utils";
 import { 
   ChartLine, 
@@ -6,8 +6,7 @@ import {
   BarChart3, 
   FileText, 
   Settings, 
-  LogOut, 
-  User,
+  Building2,
   Menu,
   X,
   MessageCircle
@@ -21,7 +20,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const { user, signOut } = useAuth();
+  const { selectedOrg, clearOrg } = useOrg();
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -83,28 +82,31 @@ export function Sidebar({ className }: SidebarProps) {
         </ul>
       </nav>
       
-      {/* User Profile */}
+      {/* Org Profile */}
       <div className="border-t border-slate-200 p-4">
         <div className="flex items-center gap-3">
-          <div className="bg-slate-300 rounded-full w-8 h-8 flex items-center justify-center">
-            <User className="text-slate-600 text-sm" />
+          <div className="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center">
+            <Building2 className="text-primary text-sm" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate" data-testid="text-user-name">
-              {user?.name || user?.email?.split('@')[0] || "User"}
+            <p className="text-sm font-medium text-slate-900 truncate" data-testid="text-org-name">
+              {selectedOrg?.name || "Demo Mode"}
             </p>
-            <p className="text-xs text-slate-500 truncate" data-testid="text-user-role">
-              {user?.role || "Manager"}
+            <p className="text-xs text-slate-500 truncate" data-testid="text-org-slug">
+              @{selectedOrg?.slug || "demo"}
             </p>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={signOut}
+            onClick={() => {
+              clearOrg();
+              window.location.href = '/choose-org';
+            }}
             className="text-slate-400 hover:text-slate-600"
-            data-testid="button-sign-out"
+            data-testid="button-switch-org"
           >
-            <LogOut className="h-4 w-4" />
+            <Building2 className="h-4 w-4" />
           </Button>
         </div>
       </div>

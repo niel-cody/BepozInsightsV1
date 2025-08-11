@@ -4,7 +4,6 @@ import { Calendar, CalendarDays, ChevronDown, TrendingUp, TrendingDown } from "l
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { AuthGuard } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { FilterBar } from "@/components/sales-trends/filter-bar";
@@ -156,8 +155,7 @@ export default function SalesTrendsPage() {
   const [selectedType, setSelectedType] = useState("all");
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
         <Sidebar />
         
         <main className="lg:ml-64">
@@ -357,7 +355,6 @@ export default function SalesTrendsPage() {
             </div>
           </div>
         </main>
-      </div>
-    </AuthGuard>
+    </div>
   );
 }

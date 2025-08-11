@@ -1,141 +1,122 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authAPI, authStorage } from "@/lib/supabase";
-
-type Org = { id: string; name: string; slug?: string; role: string; is_default: boolean };
+import { Badge } from "@/components/ui/badge";
+import { Building2, Loader2 } from "lucide-react";
+import { useOrg } from "@/hooks/use-org";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ChooseOrgPage() {
-  const [orgs, setOrgs] = useState<Org[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [, navigate] = useLocation();
-  const token = authStorage.getToken();
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const { refresh, signOut } = useAuth();
+  const [selecting, setSelecting] = useState<string | null>(null);
+  const { orgs, selectOrg, loading } = useOrg();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const loadOrgs = useCallback(async () => {
-    if (!token) return;
+  const handleSelectOrganization = async (orgId: string, orgName: string) => {
+    setSelecting(orgId);
+    
     try {
-      setError(null);
-      const res = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${token}` } });
-      if (res.status === 401) {
-        // Attempt silent re-auth using stored email, then retry once
-        const storedUser = authStorage.getUser();
-        if (storedUser?.email) {
-          const relogin = await authAPI.login(storedUser.email);
-          if (relogin?.accessToken) {
-            const retry = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${relogin.accessToken}` } });
-            if (retry.ok) {
-              const data: Org[] = await retry.json();
-              setOrgs(data);
-              if (data.length === 1) onSelect(data[0]);
-              return;
-            }
-          }
-        }
-        authStorage.removeToken();
-        navigate('/');
+      const org = orgs.find(o => o.id === orgId);
+      if (!org) {
+        toast({
+          title: "Error",
+          description: "Organization not found",
+          variant: "destructive",
+        });
         return;
       }
-      if (!res.ok) throw new Error(await res.text());
-      const data: Org[] = await res.json();
-      setOrgs(data);
-      // Auto-select when only one org
-      if (data.length === 1) {
-        onSelect(data[0]);
+
+      const result = await selectOrg(org);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Selected ${orgName}`,
+        });
+        setLocation('/dashboard');
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to select organization",
+          variant: "destructive",
+        });
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load organizations');
-      setOrgs([]);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (token) loadOrgs();
-  }, [token, loadOrgs]);
-
-  useEffect(() => {
-    // Focus heading for screen readers once mounted
-    headingRef.current?.focus();
-  }, []);
-
-  const onSelect = async (org: Org) => {
-    try {
-      setSubmitting(true);
-      const res = await fetch('/api/orgs/select', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ organizationId: org.id })
+    } catch (error) {
+      console.error('Error selecting organization:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
       });
-      if (!res.ok) throw new Error('Failed to select organization');
-      const { accessToken } = await res.json();
-      authStorage.setToken(accessToken);
-      // Refresh user context so orgId is present and routes resolve
-      await refresh();
-      navigate('/');
-    } catch {
-      setSubmitting(false);
+    } finally {
+      setSelecting(null);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Card className="w-full max-w-md mx-4">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading organizations...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6" aria-busy={!orgs && !error}>
-      <Card className="w-full max-w-lg border-slate-200 shadow-none">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold tracking-tight text-slate-900 mb-2">Choose an organization</h1>
-              <p className="text-sm text-slate-500">Select which organization you want to access.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={loadOrgs} aria-label="Refresh organizations">Refresh</Button>
-              <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate('/'); }} aria-label="Sign out and return to login">Sign out</Button>
-            </div>
-          </div>
-          <div className="h-4" />
-
-          {!orgs && !error && (
-            <div className="text-sm text-slate-500" role="status" aria-live="polite">Loading organizations…</div>
-          )}
-
-          {error && (
-            <div className="mb-4 rounded border border-red-200 bg-red-50 text-red-800 p-3 text-sm" role="alert">
-              {error}
-            </div>
-          )}
-
-          {orgs && orgs.length === 0 && (
-            <div className="text-sm text-slate-600">No organizations found for your account. Please contact your administrator for access.</div>
-          )}
-
-          {orgs && orgs.length > 0 && (
-            <div className="space-y-2">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <Card className="w-full max-w-2xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Choose Your Organization</CardTitle>
+          <p className="text-muted-foreground">
+            Select the organization you'd like to access for this demo.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {orgs.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              No organizations available. Please check your database connection.
+            </p>
+          ) : (
+            <div className="grid gap-3">
               {orgs.map((org) => (
-                <div key={org.id} className="flex items-center justify-between rounded-md border border-slate-200 p-3 bg-white transition-colors hover:bg-slate-50">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 text-sm font-semibold">
-                      {org.name.slice(0, 2).toUpperCase()}
-                    </span>
-                    <div>
-                      <div className="text-slate-900 text-sm font-medium leading-tight">{org.name}</div>
-                      <div className="text-slate-500 text-xs">{org.role}</div>
+                <Card 
+                  key={org.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/20"
+                  onClick={() => handleSelectOrganization(org.id, org.name)}
+                  data-testid={`card-org-${org.id}`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold" data-testid={`text-org-name-${org.id}`}>{org.name}</h3>
+                          <p className="text-sm text-muted-foreground" data-testid={`text-org-slug-${org.id}`}>@{org.slug}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">Demo</Badge>
+                        {selecting === org.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Button size="sm" data-testid={`button-select-${org.id}`}>
+                            Select
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => onSelect(org)} disabled={submitting} aria-disabled={submitting} aria-busy={submitting} className="min-w-[84px]">
-                    {submitting ? 'Selecting…' : 'Select'}
-                  </Button>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
-            </div>
-          )}
-          {error && (
-            <div className="mt-4">
-              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-                Retry
-              </Button>
             </div>
           )}
         </CardContent>
@@ -143,5 +124,3 @@ export default function ChooseOrgPage() {
     </div>
   );
 }
-
-

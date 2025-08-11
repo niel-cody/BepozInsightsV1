@@ -1,91 +1,56 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronsUpDown } from "lucide-react";
-import { authStorage } from "@/lib/supabase";
-import { useAuth } from "@/hooks/use-auth";
-import { queryClient } from "@/lib/queryClient";
-
-type Org = { id: string; name: string; slug?: string; role: string; is_default: boolean };
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Building2, ChevronDown } from "lucide-react";
+import { useOrg } from "@/hooks/use-org";
+import { useLocation } from "wouter";
 
 export function OrgSwitcher() {
-  const [orgs, setOrgs] = useState<Org[]>([]);
-  const [current, setCurrent] = useState<Org | null>(null);
-  const [open, setOpen] = useState(false);
-  const token = authStorage.getToken();
-  const { refresh } = useAuth();
+  const { selectedOrg, clearOrg } = useOrg();
+  const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) return;
-        const data: Org[] = await res.json();
-        setOrgs(data);
-        const def = data.find(o => o.is_default) || data[0] || null;
-        setCurrent(def);
-      } catch {}
-    };
-    if (token) load();
-  }, [token]);
-
-  const onSelect = async (org: Org) => {
-    if (!token || !org) return;
-    try {
-      const res = await fetch('/api/orgs/select', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ organizationId: org.id })
-      });
-      if (!res.ok) return;
-      const { accessToken } = await res.json();
-      authStorage.setToken(accessToken);
-      setCurrent(org);
-      // Invalidate all cached queries to prevent cross-org bleed
-      queryClient.clear();
-      // Refresh the user context so orgId is reflected
-      await refresh();
-      // Optionally, you can navigate or emit an event; most pages will refetch
-    } catch {}
+  const handleSwitchOrg = () => {
+    clearOrg();
+    setLocation('/choose-org');
   };
 
-  if (!current) return null;
+  if (!selectedOrg) {
+    return null;
+  }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-          aria-label="Current organization"
-          aria-haspopup="menu"
-          aria-expanded={open}
-        >
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-slate-100 text-slate-700 text-xs font-semibold">
-            {current.name.slice(0, 2).toUpperCase()}
-          </span>
-          <span className="text-sm text-slate-900">{current.name}</span>
-          <ChevronsUpDown className="h-3 w-3 text-slate-500" />
+        <Button variant="outline" className="w-full justify-between" data-testid="button-org-switcher">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <span className="truncate">{selectedOrg.name}</span>
+          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+      <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuLabel data-testid="text-current-org">Current Organization</DropdownMenuLabel>
+        <DropdownMenuItem className="p-3" data-testid="item-current-org">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <div>
+              <div className="font-medium">{selectedOrg.name}</div>
+              <div className="text-xs text-muted-foreground">@{selectedOrg.slug}</div>
+            </div>
+          </div>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {orgs.map(org => (
-          <DropdownMenuItem
-            key={org.id}
-            onClick={() => onSelect(org)}
-            className="flex justify-between"
-            aria-current={org.id === current.id ? 'true' : undefined}
-          >
-            <span>{org.name}</span>
-            {org.id === current.id && <span className="text-xs text-slate-500">Current</span>}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuItem onClick={handleSwitchOrg} data-testid="button-switch-org">
+          Switch Organization
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-
-

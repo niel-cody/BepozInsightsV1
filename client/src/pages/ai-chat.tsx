@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AuthGuard } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -185,8 +184,7 @@ export default function AIChatPage() {
   };
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
         <Sidebar />
         
         <main className="lg:ml-64">
@@ -411,7 +409,6 @@ export default function AIChatPage() {
             </div>
           </div>
         </main>
-      </div>
-    </AuthGuard>
+    </div>
   );
 }

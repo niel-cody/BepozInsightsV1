@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { authStorage } from "@/lib/supabase";
+import { orgStorage } from "@/lib/org-manager";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -13,12 +13,11 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const token = authStorage.getToken();
-  const user = authStorage.getUser();
+  const selectedOrg = orgStorage.getSelectedOrg();
   const headers: Record<string, string> = {};
   if (data) headers["Content-Type"] = "application/json";
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  if (user?.orgId) headers["X-Org-Id"] = user.orgId;
+  if (selectedOrg) headers["X-Org-Id"] = selectedOrg.id;
+  
   const res = await fetch(url, {
     method,
     headers,
@@ -36,16 +35,15 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const token = authStorage.getToken();
-    const user = authStorage.getUser();
+    const selectedOrg = orgStorage.getSelectedOrg();
     // Namespace cache by orgId by appending a benign query param
     const baseUrl = queryKey.join("/") as string;
-    const url = user?.orgId ? (baseUrl.includes("?") ? `${baseUrl}&orgId=${user.orgId}` : `${baseUrl}?orgId=${user.orgId}`) : baseUrl;
+    const url = selectedOrg ? (baseUrl.includes("?") ? `${baseUrl}&orgId=${selectedOrg.id}` : `${baseUrl}?orgId=${selectedOrg.id}`) : baseUrl;
+    
     const res = await fetch(url, {
       credentials: "include",
       headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(user?.orgId ? { "X-Org-Id": user.orgId } : {}),
+        ...(selectedOrg ? { "X-Org-Id": selectedOrg.id } : {}),
       },
     });
 
@@ -53,7 +51,7 @@ export const getQueryFn: <T>(options: {
       return null;
     }
     if (res.status === 403) {
-      // lost access; force org selection
+      // org access issue; force org selection
       window.location.href = "/choose-org";
       return null as any;
     }

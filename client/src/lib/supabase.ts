@@ -2,45 +2,27 @@
 // This provides better security and allows for proper authentication middleware
 
 // Auth types for Supabase-style authentication
-export type AuthUser = {
+export type Org = {
   id: string;
-  email: string;
-  name?: string;
-  role: string;
-  locationAccess: string[];
-  orgId?: string;
+  name: string;
+  slug: string;
 };
 
-export type AuthSession = {
-  user: AuthUser;
-  accessToken: string;
-};
+// Simple org selection management for demo
+const ORG_KEY = 'bepoz_selected_org';
 
-// Simple JWT token management
-const TOKEN_KEY = 'bepoz_auth_token';
-const USER_KEY = 'bepoz_auth_user';
-
-export const authStorage = {
-  getToken: (): string | null => {
-    return localStorage.getItem(TOKEN_KEY);
+export const orgStorage = {
+  getSelectedOrg: (): Org | null => {
+    const orgData = localStorage.getItem(ORG_KEY);
+    return orgData ? JSON.parse(orgData) : null;
   },
   
-  setToken: (token: string): void => {
-    localStorage.setItem(TOKEN_KEY, token);
+  setSelectedOrg: (org: Org): void => {
+    localStorage.setItem(ORG_KEY, JSON.stringify(org));
   },
   
-  removeToken: (): void => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-  },
-  
-  getUser: (): AuthUser | null => {
-    const userData = localStorage.getItem(USER_KEY);
-    return userData ? JSON.parse(userData) : null;
-  },
-  
-  setUser: (user: AuthUser): void => {
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  removeSelectedOrg: (): void => {
+    localStorage.removeItem(ORG_KEY);
   },
 };
 
