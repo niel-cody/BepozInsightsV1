@@ -313,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate membership
       const membership: any = await withTimeout(db.execute(sql`
         select 1 from public.user_organizations
-        where (user_id = ${req.user!.id}) and organization_id = ${organizationId}::uuid
+        where (user_id = ${req.user!.id} or user_id = ${req.user!.email}) and organization_id = ${organizationId}::uuid
         limit 1
       `), DB_TIMEOUT_MS);
       let isMember = Array.isArray(membership) ? membership.length > 0 : (membership as any).rows?.length > 0;
@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         select o.id, o.name, o.slug, uo.role, uo.is_default
         from public.user_organizations uo
         join public.organizations o on o.id = uo.organization_id
-        where uo.user_id = ${req.user!.id} and o.is_active = true
+        where (uo.user_id = ${req.user!.id} or uo.user_id = ${req.user!.email}) and o.is_active = true
         order by uo.is_default desc, o.name asc
       `), DB_TIMEOUT_MS);
       const rows = Array.isArray(result) ? result : (result as any).rows;

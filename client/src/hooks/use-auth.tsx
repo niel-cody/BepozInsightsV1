@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await authAPI.login(email);
       if (result && result.user) {
         setUser(result.user);
+        // Persist locally so we can silently re-auth if server loses in-memory users
+        authStorage.setUser(result.user);
         return { success: true };
       }
       return { success: false, message: "Login failed" };

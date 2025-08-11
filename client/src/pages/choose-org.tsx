@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { authStorage } from "@/lib/supabase";
+import { authAPI, authStorage } from "@/lib/supabase";
 
 type Org = { id: string; name: string; slug?: string; role: string; is_default: boolean };
 
@@ -22,7 +22,20 @@ export default function ChooseOrgPage() {
         setError(null);
         const res = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${token}` } });
         if (res.status === 401) {
-          // Stale token (e.g., server restart lost in-memory user). Force re-auth.
+          // Attempt silent re-auth using stored email, then retry once
+          const storedUser = authStorage.getUser();
+          if (storedUser?.email) {
+            const relogin = await authAPI.login(storedUser.email);
+            if (relogin?.accessToken) {
+              const retry = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${relogin.accessToken}` } });
+              if (retry.ok) {
+                const data: Org[] = await retry.json();
+                setOrgs(data);
+                if (data.length === 1) onSelect(data[0]);
+                return;
+              }
+            }
+          }
           authStorage.removeToken();
           navigate('/');
           return;
