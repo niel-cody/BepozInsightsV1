@@ -34,9 +34,26 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const user = await storage.getUser(decoded.userId);
+    // Be resilient to memory resets: fall back to email lookup if id not found
+    let user = await storage.getUser(decoded.userId);
+    if (!user && decoded.email) {
+      user = await storage.getUserByEmail(decoded.email);
+      // Auto-heal in demo: if user vanished due to server restart, recreate from token
+      if (!user) {
+        try {
+          user = await storage.createUser({
+            email: decoded.email,
+            name: (decoded.email as string).split('@')[0],
+            role: 'manager',
+            locationAccess: ["loc-1", "loc-2", "loc-3"],
+            isActive: true,
+          } as any);
+          await storage.updateUserLastLogin(user.id);
+        } catch (_) {}
+      }
+    }
     
-    if (!user || !user.isActive) {
+    if (!user || user.isActive === false) {
       return res.status(401).json({ message: 'Invalid or inactive user' });
     }
 
@@ -62,6 +79,7 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
 const magicLinkTokens = new Map<string, { email: string; expires: number }>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const HAS_DB = Boolean(process.env.DATABASE_URL);
   // Simple in-memory rate limiter (per user + route key)
   const rateBuckets = new Map<string, { count: number; resetAt: number }>();
   const checkRateLimit = (key: string, limit = 5, windowMs = 60_000): boolean => {
@@ -139,7 +157,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await ensureDemoMemberships(user.id, email);
 
       // Determine default org
-      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
+      let defaultOrgId = await getDefaultOrgIdForUser(user.id);
+      if (!defaultOrgId && !HAS_DB) {
+        // Demo fallback when no database configured
+        defaultOrgId = 'org-1';
+      }
       // Generate JWT
       const payload: any = { userId: user.id, email: user.email };
       if (defaultOrgId) payload.org_id = defaultOrgId;
@@ -227,7 +249,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await ensureDemoMemberships(user.id, user.email);
 
       // Determine default org
-      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
+      let defaultOrgId = await getDefaultOrgIdForUser(user.id);
+      if (!defaultOrgId && !HAS_DB) {
+        defaultOrgId = 'org-1';
+      }
       // Generate JWT
       const payload: any = { userId: user.id, email: user.email };
       if (defaultOrgId) payload.org_id = defaultOrgId;
@@ -270,6 +295,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(429).json({ message: 'Too many org switch attempts, please try again shortly' });
       }
       const { organizationId } = z.object({ organizationId: z.string() }).parse(req.body);
+      if (!HAS_DB) {
+        // Demo fallback: accept any org and issue token
+        const newToken = jwt.sign({ userId: req.user!.id, email: req.user!.email, org_id: organizationId }, JWT_SECRET, { expiresIn: '7d' });
+        await setRLSClaims(organizationId, 'authenticated', req.user!.id);
+        return res.json({ accessToken: newToken, organizationId });
+      }
 
       // Validate membership
       const membership: any = await db.execute(sql`
@@ -304,6 +335,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard routes
   app.get("/api/orgs", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
+      if (!HAS_DB) {
+        const demoOrgs = [
+          { id: 'org-1', name: 'Bepoz Demo Co', slug: 'demo', role: 'manager', is_default: true },
+          { id: 'org-2', name: 'Northside Cafe Group', slug: 'northside', role: 'manager', is_default: false },
+          { id: 'org-3', name: 'Harbour Eats', slug: 'harbour', role: 'manager', is_default: false },
+        ];
+        return res.json(demoOrgs);
+      }
       const startedAt = Date.now();
       const result: any = await db.execute(sql`
         select o.id, o.name, o.slug, uo.role, uo.is_default

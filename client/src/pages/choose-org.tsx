@@ -21,6 +21,12 @@ export default function ChooseOrgPage() {
       try {
         setError(null);
         const res = await fetch('/api/orgs', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.status === 401) {
+          // Stale token (e.g., server restart lost in-memory user). Force re-auth.
+          authStorage.removeToken();
+          navigate('/');
+          return;
+        }
         if (!res.ok) throw new Error(await res.text());
         const data: Org[] = await res.json();
         setOrgs(data);
