@@ -1,6 +1,7 @@
 import { AuthGuard } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { SlicersPanel } from "@/components/dashboard/slicers-panel";
 import { KPICards } from "@/components/dashboard/kpi-cards";
 import { TradingChart } from "@/components/dashboard/trading-chart";
 import { TopProducts } from "@/components/dashboard/top-products";
@@ -18,6 +19,9 @@ export default function DashboardPage() {
           />
           
           <div className="p-6 space-y-6">
+            {/* Slicers Panel */}
+            <SlicersPanel />
+            
             {/* KPI Cards */}
             <KPICards />
 
