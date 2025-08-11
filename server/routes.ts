@@ -49,7 +49,7 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
     };
     // Best-effort: attach org_id to DB session for RLS
     if (req.user.orgId) {
-      try { await setRLSClaims(req.user.orgId, 'authenticated', req.user.id); } catch (_) {}
+      try { await setRLSClaims(req.user.orgId, 'authenticated', req.user.email || req.user.id); } catch (_) {}
     }
     
     next();
