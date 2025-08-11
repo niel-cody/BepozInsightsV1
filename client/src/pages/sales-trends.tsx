@@ -110,15 +110,15 @@ const CalendarHeatmap = ({ data }: { data: any[] }) => {
           <div key={month} className="space-y-2">
             <h4 className="text-sm font-medium text-gray-700">{month}</h4>
             <div className="grid grid-cols-7 gap-1 text-xs">
-              {weekDays.map(day => (
-                <div key={day} className="text-center text-gray-500 text-xs p-1 font-medium">
+              {weekDays.map((day, index) => (
+                <div key={`weekday-${index}`} className="text-center text-gray-500 text-xs p-1 font-medium">
                   {day}
                 </div>
               ))}
               
               {/* Empty cells for days before month starts */}
               {Array.from({ length: startDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-6"></div>
+                <div key={`empty-${monthIndex}-${i}`} className="h-6"></div>
               ))}
               
               {/* Days of the month */}
@@ -129,7 +129,7 @@ const CalendarHeatmap = ({ data }: { data: any[] }) => {
                 
                 return (
                   <div
-                    key={day}
+                    key={`day-${monthIndex}-${day}`}
                     className={`h-6 w-6 rounded-sm flex items-center justify-center text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity ${
                       getIntensityColor(intensity)
                     } ${intensity > 2 ? 'text-white' : 'text-gray-700'}`}
@@ -205,51 +205,6 @@ export default function SalesTrendsPage() {
             </div>
           </div>
         </div>
-
-        {/* Key Business Stats Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Key Business Stats - Today</CardTitle>
-            <Button variant="outline" size="sm" className="text-sm" data-testid="button-today">
-              <Calendar className="w-4 h-4 mr-2" />
-              Today
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-6 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-gray-600">Gross Sales</p>
-                <p className="text-2xl font-bold">$0</p>
-                <p className="text-xs text-gray-500">vs previous: +0%</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-gray-600">Net Sales</p>
-                <p className="text-2xl font-bold">$0</p>
-                <p className="text-xs text-gray-500">vs previous: +0%</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-gray-600">Average Sale</p>
-                <p className="text-2xl font-bold">$0</p>
-                <p className="text-xs text-gray-500">vs previous: +0%</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-gray-600">Discounts</p>
-                <p className="text-2xl font-bold">$0</p>
-                <p className="text-xs text-gray-500">vs previous: +0%</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-gray-600">Refund Count</p>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-xs text-gray-500">vs previous: +0%</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-gray-600">Refund Amount</p>
-                <p className="text-2xl font-bold">$0</p>
-                <p className="text-xs text-gray-500">vs previous: +0%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar Heatmap */}
