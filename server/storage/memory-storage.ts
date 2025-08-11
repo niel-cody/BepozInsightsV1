@@ -118,6 +118,7 @@ export class MemoryStorage implements IStorage {
       id: `user-${Date.now()}`,
       ...insertUser,
       locationAccess: ["loc-1", "loc-2", "loc-3"], // Give access to all locations for demo
+      isActive: true,
       createdAt: new Date(),
       lastLoginAt: undefined,
     };
