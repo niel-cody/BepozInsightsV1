@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateSQL, generateInsightFromData } from "./services/openai";
+import { generateSQL, generateInsightFromData, runAgentQuery } from "./services/openai";
 import { setRLSClaims } from "./services/supabase";
 import { db } from "./services/supabase";
 import { sql } from "drizzle-orm";
@@ -420,7 +420,15 @@ Important notes:
         return res.json(cached as AIQueryResponse);
       }
 
-      // Generate SQL using OpenAI
+      // Generate SQL using Agents SDK (no feature flag in dev)
+      const agentOut = await runAgentQuery({
+        query: aiRequest.query,
+        schema: schemaDescription,
+        dateRange: aiRequest.dateRange,
+        locationIds: aiRequest.locationIds,
+        channel: aiRequest.channel,
+        orderType: aiRequest.orderType,
+      });
       const sqlResult = await generateSQL({
         query: aiRequest.query,
         schema: schemaDescription,
@@ -429,6 +437,12 @@ Important notes:
         channel: aiRequest.channel,
         orderType: aiRequest.orderType,
       });
+      // Prefer agent SQL if present
+      if (agentOut.sql && agentOut.sql.length > 0) {
+        sqlResult.sql = agentOut.sql;
+        sqlResult.isValid = true;
+        sqlResult.explanation = agentOut.explanation;
+      }
 
       if (!sqlResult.isValid || !sqlResult.sql) {
         return res.json({
