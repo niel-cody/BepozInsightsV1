@@ -211,6 +211,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Signed out successfully' });
   });
 
+  // Diagnostics: helps confirm the running server sees Supabase
+  app.get('/api/diag', async (_req, res) => {
+    const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+    let orgCount: number | null = null;
+    try {
+      const result: any = await db.execute(sql`select count(*)::int as c from public.organizations`);
+      const row = Array.isArray(result) ? result[0] : (result as any).rows?.[0];
+      orgCount = row?.c ?? null;
+    } catch (_) {
+      orgCount = null;
+    }
+    res.json({ hasDatabaseUrl, orgCount });
+  });
+
   // Organization selection: validate membership and issue new token with org_id
   app.post("/api/orgs/select", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
