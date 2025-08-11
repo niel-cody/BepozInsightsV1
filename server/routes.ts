@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateSQL, generateInsightFromData } from "./services/openai";
 import { setRLSClaims } from "./services/supabase";
+import { db } from "./services/supabase";
+import { sql } from "drizzle-orm";
 import { aiResponseCache } from "./services/cache";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -60,6 +62,23 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
 const magicLinkTokens = new Map<string, { email: string; expires: number }>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Helper: get default org for a user (is_default true else first active)
+  const getDefaultOrgIdForUser = async (userId: string): Promise<string | undefined> => {
+    try {
+      const result: any = await db.execute(sql`
+        select uo.organization_id
+        from public.user_organizations uo
+        join public.organizations o on o.id = uo.organization_id
+        where uo.user_id = ${userId} and o.is_active = true
+        order by uo.is_default desc, o.name asc
+        limit 1
+      `);
+      const row = Array.isArray(result) ? result[0] : (result as any).rows?.[0];
+      return row?.organization_id ?? undefined;
+    } catch (_) {
+      return undefined;
+    }
+  };
   
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
@@ -82,12 +101,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update last login
       await storage.updateUserLastLogin(user.id);
 
+      // Determine default org
+      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
       // Generate JWT
-      const accessToken = jwt.sign(
-        { userId: user.id, email: user.email, org_id: user.id.split('-')[0] || 'org-demo' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const payload: any = { userId: user.id, email: user.email };
+      if (defaultOrgId) payload.org_id = defaultOrgId;
+      const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
       res.json({
         user: {
@@ -165,12 +184,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update last login
       await storage.updateUserLastLogin(user.id);
 
+      // Determine default org
+      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
       // Generate JWT
-      const accessToken = jwt.sign(
-        { userId: user.id, email: user.email, org_id: user.id.split('-')[0] || 'org-demo' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const payload: any = { userId: user.id, email: user.email };
+      if (defaultOrgId) payload.org_id = defaultOrgId;
+      const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 
       // Clean up used token
       magicLinkTokens.delete(token);
@@ -200,7 +219,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Signed out successfully' });
   });
 
+  // Organization selection: validate membership and issue new token with org_id
+  app.post("/api/orgs/select", authenticateToken, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { organizationId } = z.object({ organizationId: z.string().uuid() }).parse(req.body);
+
+      // Validate membership
+      const membership: any = await db.execute(sql`
+        select 1 from public.user_organizations
+        where user_id = ${req.user!.id} and organization_id = ${organizationId}::uuid
+        limit 1
+      `);
+      const isMember = Array.isArray(membership) ? membership.length > 0 : (membership as any).rows?.length > 0;
+      if (!isMember) {
+        return res.status(403).json({ message: 'Not a member of this organization' });
+      }
+
+      // Update is_default flags
+      await db.execute(sql`
+        update public.user_organizations set is_default = false where user_id = ${req.user!.id};
+        update public.user_organizations set is_default = true where user_id = ${req.user!.id} and organization_id = ${organizationId}::uuid;
+      `);
+
+      // Issue new JWT with org_id
+      const newToken = jwt.sign({ userId: req.user!.id, email: req.user!.email, org_id: organizationId }, JWT_SECRET, { expiresIn: '7d' });
+
+      // Attach RLS claims immediately for this request
+      await setRLSClaims(organizationId, 'authenticated', req.user!.id);
+
+      res.json({ accessToken: newToken, organizationId });
+    } catch (error) {
+      return res.status(400).json({ message: error instanceof Error ? error.message : 'Invalid request' });
+    }
+  });
+
   // Dashboard routes
+  app.get("/api/orgs", authenticateToken, async (req: AuthenticatedRequest, res) => {
+    try {
+      const result: any = await db.execute(sql`
+        select o.id, o.name, o.slug, uo.role, uo.is_default
+        from public.user_organizations uo
+        join public.organizations o on o.id = uo.organization_id
+        where uo.user_id = ${req.user!.id} and o.is_active = true
+        order by uo.is_default desc, o.name asc
+      `);
+      const rows = Array.isArray(result) ? result : (result as any).rows;
+      res.json(rows || []);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch organizations' });
+    }
+  });
   app.get("/api/locations", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
       const locations = req.user?.role === 'admin' 
