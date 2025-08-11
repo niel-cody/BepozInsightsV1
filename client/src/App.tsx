@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
 import SalesTrendsPage from "@/pages/sales-trends";
+import AIChatPage from "@/pages/ai-chat";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRoutes() {
@@ -24,6 +25,7 @@ function AuthenticatedRoutes() {
     <Switch>
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/sales-trends" component={SalesTrendsPage} />
+      <Route path="/ai-chat" component={AIChatPage} />
       <Route path="/" component={DashboardPage} />
       <Route component={NotFound} />
     </Switch>

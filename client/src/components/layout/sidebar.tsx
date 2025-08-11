@@ -9,7 +9,8 @@ import {
   LogOut, 
   User,
   Menu,
-  X
+  X,
+  MessageCircle
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export function Sidebar({ className }: SidebarProps) {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home, current: location === "/dashboard" },
     { name: "Sales Trends", href: "/sales-trends", icon: BarChart3, current: location === "/sales-trends" },
+    { name: "AI Chat", href: "/ai-chat", icon: MessageCircle, current: location === "/ai-chat" },
     { name: "Reports", href: "/reports", icon: FileText, current: location === "/reports" },
     { name: "Settings", href: "/settings", icon: Settings, current: location === "/settings" },
   ];
