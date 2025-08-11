@@ -4,7 +4,6 @@ import { Header } from "@/components/layout/header";
 import { KPICards } from "@/components/dashboard/kpi-cards";
 import { TradingChart } from "@/components/dashboard/trading-chart";
 import { TopProducts } from "@/components/dashboard/top-products";
-import { AIQueryPanel } from "@/components/dashboard/ai-query-panel";
 
 export default function DashboardPage() {
   return (
@@ -29,9 +28,6 @@ export default function DashboardPage() {
               {/* Top Products */}
               <TopProducts />
             </div>
-
-            {/* AI Query Panel */}
-            <AIQueryPanel />
           </div>
         </main>
       </div>

@@ -1,6 +1,6 @@
 # Overview
 
-Bepoz AI Insights is a comprehensive hospitality analytics dashboard that provides AI-powered insights for POS data. The application combines a React frontend with an Express backend to deliver real-time analytics, natural language querying capabilities, and interactive data visualizations for restaurant and hospitality businesses. Users can analyze sales data, track KPIs, and generate insights through conversational AI queries.
+Bepoz AI Insights is a comprehensive hospitality analytics dashboard that provides AI-powered insights for POS data. The application combines a React frontend with an Express backend to deliver real-time analytics, natural language querying capabilities, and interactive data visualizations for restaurant and hospitality businesses. Users can analyze sales data, track KPIs, and generate insights through a dedicated AI chat interface with conversation history.
 
 # User Preferences
 
@@ -15,11 +15,12 @@ The frontend is built with React and TypeScript, utilizing a modern component-ba
 - **UI Framework**: React with TypeScript for type safety and component reusability
 - **Styling**: Tailwind CSS with shadcn/ui component library for consistent design system
 - **State Management**: TanStack Query (React Query) for server state management and caching
-- **Routing**: Wouter for lightweight client-side routing
-- **Authentication**: Custom JWT-based authentication with magic link login
+- **Routing**: Wouter for lightweight client-side routing with dedicated pages for Dashboard, Sales Trends, and AI Chat
+- **Authentication**: Custom JWT-based authentication with direct login using demo@bepoz.com
 - **Charts/Visualization**: Chart.js for data visualization and analytics charts
+- **AI Chat Interface**: Dedicated conversation page with message history and quick access from header
 
-The application follows a modular structure with separate directories for components, pages, hooks, and utilities. The UI components are based on Radix UI primitives with custom styling through the shadcn/ui system.
+The application follows a modular structure with separate directories for components, pages, hooks, and utilities. The UI components are based on Radix UI primitives with custom styling through the shadcn/ui system. All pages share consistent sidebar and header layouts for unified user experience.
 
 ## Backend Architecture
 
