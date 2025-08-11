@@ -140,6 +140,31 @@ export function AIQueryPanel() {
           {/* AI Response Area */}
           {response ? (
             <div className="bg-slate-50 rounded-lg p-6 space-y-4 ai-response" data-testid="ai-response-container">
+              {/* KPI Callouts */}
+              {response.kpis && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <p className="text-xs text-slate-500">Net Sales</p>
+                    <p className="text-base font-semibold text-slate-900">${'{'}Math.round(response.kpis.netSales).toLocaleString(){'}'}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <p className="text-xs text-slate-500">Gross Sales</p>
+                    <p className="text-base font-semibold text-slate-900">${'{'}Math.round(response.kpis.grossSales).toLocaleString(){'}'}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <p className="text-xs text-slate-500">Profit</p>
+                    <p className="text-base font-semibold text-slate-900">${'{'}Math.round(response.kpis.profit).toLocaleString(){'}'}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <p className="text-xs text-slate-500">Transactions</p>
+                    <p className="text-base font-semibold text-slate-900">{response.kpis.transactions.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <p className="text-xs text-slate-500">Avg Sale</p>
+                    <p className="text-base font-semibold text-slate-900">${'{'}Math.round(response.kpis.averageSale).toLocaleString(){'}'}</p>
+                  </div>
+                </div>
+              )}
               {/* AI Answer */}
               <div className="bg-white rounded-lg p-4 border border-slate-200">
                 <div className="flex items-start gap-3">
@@ -194,6 +219,19 @@ export function AIQueryPanel() {
               )}
 
               {/* Data Table (if applicable) */}
+              {/* Drivers */}
+              {response.drivers && response.drivers.length > 0 && (
+                <div className="bg-white rounded-lg p-4 border border-slate-200">
+                  <p className="text-sm font-medium text-slate-900 mb-3">Top Drivers</p>
+                  <ul className="text-sm text-slate-700 list-disc list-inside">
+                    {response.drivers.map((d, i) => (
+                      <li key={i}>
+                        {d.label}: {Math.round(d.value).toLocaleString()}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {response.data && response.data.length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-slate-200">
                   <p className="text-sm font-medium text-slate-900 mb-3">Query Results</p>

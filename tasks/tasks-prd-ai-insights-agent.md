@@ -47,6 +47,11 @@
   - [x] 4.1 Implement in‑memory cache with TTL (~15m) and request key normalization
   - [x] 4.2 Integrate cache into `/api/ai/query` response path
 - [ ] 5.0 Insight Formatting: Answer, KPI Callouts, Top Drivers
+  - [ ] 5.1 Compute KPI callouts server-side (net sales, gross, profit, transactions, average sale)
+  - [ ] 5.2 Compute top drivers (top contributors by venue/product/category when present)
+  - [x] 5.2 Compute top drivers (top contributors by venue/product/category when present)
+  - [ ] 5.3 Render KPI callouts and drivers in AI panel UI
+  - [x] 5.3 Render KPI callouts and drivers in AI panel UI
 - [ ] 6.0 Dashboard UI: AI Panel Enhancements and Error States
 - [ ] 7.0 Observability & Safety: Logging, Auditing, and Limits
 

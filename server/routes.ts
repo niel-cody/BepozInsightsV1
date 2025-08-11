@@ -364,10 +364,34 @@ Important notes:
         sqlResult.sql
       );
 
+      // Compute simple KPI callouts when columns available
+      const firstRow = queryData?.[0] ?? {} as any;
+      const kpi = {
+        netSales: Number(firstRow.net_sales ?? firstRow.netamount ?? 0) || 0,
+        grossSales: Number(firstRow.gross_sales ?? firstRow.totalamount ?? 0) || 0,
+        transactions: Number(firstRow.qty_transactions ?? firstRow.order_count ?? 0) || 0,
+        averageSale: Number(firstRow.average_sale ?? 0) || 0,
+        profit: Number(firstRow.profit_amount ?? 0) || 0,
+      };
+
+      // Simple drivers: pick top 3 numeric columns that look like totals (excluding ids/counts) from aggregated results
+      let drivers: { label: string; value: number }[] | undefined;
+      if (queryData.length > 0) {
+        const row = queryData[0] as Record<string, any>;
+        const candidates = Object.entries(row)
+          .filter(([k, v]) => typeof v === 'number' && !/id|count/i.test(k))
+          .map(([k, v]) => ({ label: k, value: Number(v) }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 3);
+        if (candidates.length > 0) drivers = candidates;
+      }
+
       const response: AIQueryResponse = {
         answer: insight,
         sql: sqlResult.sql,
         data: queryData,
+        kpis: kpi,
+        drivers,
       };
 
       // Basic chart data generation based on query results

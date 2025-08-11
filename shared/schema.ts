@@ -192,4 +192,12 @@ export type AIQueryResponse = {
     labels: string[];
   };
   error?: string;
+  kpis?: {
+    netSales: number;
+    grossSales: number;
+    profit: number;
+    transactions: number;
+    averageSale: number;
+  };
+  drivers?: { label: string; value: number }[];
 };
