@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { AuthGuard } from "@/lib/auth";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
 
 // Mock data for the calendar and analytics
 const generateCalendarData = () => {
@@ -154,63 +156,69 @@ export default function SalesTrendsPage() {
 
   return (
     <AuthGuard>
-      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Sales Trends</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Location:</span>
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger className="w-40" data-testid="select-location">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
-                  <SelectItem value="loc-1">Main Street</SelectItem>
-                  <SelectItem value="loc-2">Mall Plaza</SelectItem>
-                  <SelectItem value="loc-3">Downtown</SelectItem>
-                </SelectContent>
-              </Select>
+      <div className="min-h-screen bg-slate-50">
+        <Sidebar />
+        
+        <main className="lg:ml-64">
+          <Header 
+            title="Sales Trends" 
+            subtitle="Analyze sales patterns and performance trends over time" 
+          />
+          
+          <div className="p-6 space-y-6">
+            {/* Filter Controls */}
+            <div className="flex items-center gap-4 bg-white p-4 rounded-lg border">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Location:</span>
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger className="w-40" data-testid="select-location">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    <SelectItem value="loc-1">Main Street</SelectItem>
+                    <SelectItem value="loc-2">Mall Plaza</SelectItem>
+                    <SelectItem value="loc-3">Downtown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Channel:</span>
+                <Select value={selectedChannel} onValueChange={setSelectedChannel}>
+                  <SelectTrigger className="w-40" data-testid="select-channel">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Channels</SelectItem>
+                    <SelectItem value="dine-in">Dine In</SelectItem>
+                    <SelectItem value="takeaway">Takeaway</SelectItem>
+                    <SelectItem value="delivery">Delivery</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Type:</span>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-40" data-testid="select-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="food">Food</SelectItem>
+                    <SelectItem value="beverages">Beverages</SelectItem>
+                    <SelectItem value="merchandise">Merchandise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Channel:</span>
-              <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-                <SelectTrigger className="w-40" data-testid="select-channel">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Channels</SelectItem>
-                  <SelectItem value="dine-in">Dine In</SelectItem>
-                  <SelectItem value="takeaway">Takeaway</SelectItem>
-                  <SelectItem value="delivery">Delivery</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Type:</span>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-40" data-testid="select-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="food">Food</SelectItem>
-                  <SelectItem value="beverages">Beverages</SelectItem>
-                  <SelectItem value="merchandise">Merchandise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Calendar Heatmap */}
-          <div className="lg:col-span-2">
-            <Card className="h-full">
-              <CardHeader>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Calendar Heatmap */}
+              <div className="lg:col-span-2">
+                <Card className="h-full">
+                  <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Button
@@ -240,33 +248,33 @@ export default function SalesTrendsPage() {
                   Rolling 12-Month Net Sales Trends • All Locations & Channels • Aug 2024 to Aug 2025
                 </div>
                 <div className="text-xs text-gray-500">(Monthly View)</div>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-96 overflow-y-auto">
-                  <CalendarHeatmap data={calendarData} />
-                </div>
-                
-                {/* Legend */}
-                <div className="flex items-center justify-center mt-4 gap-2">
-                  <span className="text-xs text-gray-500">Less</span>
-                  <div className="flex gap-1">
-                    <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
-                    <div className="w-3 h-3 bg-purple-200 rounded-sm"></div>
-                    <div className="w-3 h-3 bg-purple-300 rounded-sm"></div>
-                    <div className="w-3 h-3 bg-purple-400 rounded-sm"></div>
-                    <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
-                    <div className="w-3 h-3 bg-purple-600 rounded-sm"></div>
-                  </div>
-                  <span className="text-xs text-gray-500">More</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="max-h-96 overflow-y-auto">
+                      <CalendarHeatmap data={calendarData} />
+                    </div>
+                    
+                    {/* Legend */}
+                    <div className="flex items-center justify-center mt-4 gap-2">
+                      <span className="text-xs text-gray-500">Less</span>
+                      <div className="flex gap-1">
+                        <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
+                        <div className="w-3 h-3 bg-purple-200 rounded-sm"></div>
+                        <div className="w-3 h-3 bg-purple-300 rounded-sm"></div>
+                        <div className="w-3 h-3 bg-purple-400 rounded-sm"></div>
+                        <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
+                        <div className="w-3 h-3 bg-purple-600 rounded-sm"></div>
+                      </div>
+                      <span className="text-xs text-gray-500">More</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* Right sidebar */}
-          <div className="space-y-6">
-            {/* Recent Days */}
-            <Card>
+              {/* Right sidebar */}
+              <div className="space-y-6">
+                {/* Recent Days */}
+                <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <CalendarDays className="w-4 h-4" />
@@ -315,8 +323,8 @@ export default function SalesTrendsPage() {
               </CardContent>
             </Card>
 
-            {/* Net Sales Distribution */}
-            <Card>
+                {/* Net Sales Distribution */}
+                <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium">Net Sales Distribution</CardTitle>
@@ -354,8 +362,8 @@ export default function SalesTrendsPage() {
               </CardContent>
             </Card>
 
-            {/* Monthly Analytics */}
-            <Card>
+                {/* Monthly Analytics */}
+                <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   Monthly Analytics
@@ -388,9 +396,11 @@ export default function SalesTrendsPage() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
+                </Card>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
     </AuthGuard>
   );
