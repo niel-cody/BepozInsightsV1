@@ -94,6 +94,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return undefined;
     }
   };
+
+  // Ensure demo user is mapped to all active orgs
+  const ensureDemoMemberships = async (userId: string, email: string) => {
+    if (email !== 'demo@bepoz.com') return;
+    try {
+      await db.execute(sql`
+        insert into public.user_organizations (user_id, organization_id, role, is_default)
+        select ${userId}::text, o.id, 'manager', false
+        from public.organizations o
+        where o.is_active = true
+          and not exists (
+            select 1 from public.user_organizations uo
+            where uo.user_id = ${userId}::text and uo.organization_id = o.id
+          );
+      `);
+    } catch (e) {
+      console.error('Ensure demo memberships failed:', e);
+    }
+  };
   
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
@@ -115,6 +134,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update last login
       await storage.updateUserLastLogin(user.id);
+
+      // If demo user, map to all orgs
+      await ensureDemoMemberships(user.id, email);
 
       // Determine default org
       const defaultOrgId = await getDefaultOrgIdForUser(user.id);
@@ -198,6 +220,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update last login
       await storage.updateUserLastLogin(user.id);
+
+      // If demo user, map to all orgs
+      await ensureDemoMemberships(user.id, user.email);
 
       // Determine default org
       const defaultOrgId = await getDefaultOrgIdForUser(user.id);
