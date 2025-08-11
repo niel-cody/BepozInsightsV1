@@ -13,11 +13,12 @@ export { schema };
 
 // Helper to set Supabase RLS JWT claims for the current session
 // This enables policies that reference auth.jwt()->>'org_id'
-export async function setRLSClaims(orgId: string, role: 'authenticated' | 'service_role' = 'authenticated', userIdOrEmail?: string) {
+export async function setRLSClaims(orgId?: string, role: 'authenticated' | 'service_role' = 'authenticated', userIdOrEmail?: string) {
   if (!process.env.DATABASE_URL) return;
   try {
     // Supabase's auth.jwt() reads from request.jwt.claims
-    const claims = { role, org_id: orgId, user_id: userIdOrEmail };
+    const claims: Record<string, string | undefined> = { role, user_id: userIdOrEmail } as any;
+    if (orgId) claims.org_id = orgId;
     // Use db.execute to set the config for this session
     await db.execute(
       // @ts-ignore drizzle sql raw string

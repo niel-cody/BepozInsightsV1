@@ -266,12 +266,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!checkRateLimit(rlKey, 5, 60_000)) {
         return res.status(429).json({ message: 'Too many org switch attempts, please try again shortly' });
       }
-      const { organizationId } = z.object({ organizationId: z.string().uuid() }).parse(req.body);
+      const { organizationId } = z.object({ organizationId: z.string() }).parse(req.body);
 
       // Validate membership
       const membership: any = await db.execute(sql`
         select 1 from public.user_organizations
-        where user_id = ${req.user!.id} and organization_id = ${organizationId}::uuid
+        where (user_id = ${req.user!.id} or user_id = ${req.user!.email}) and organization_id = ${organizationId}::uuid
         limit 1
       `);
       const isMember = Array.isArray(membership) ? membership.length > 0 : (membership as any).rows?.length > 0;
