@@ -276,6 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard routes
   app.get("/api/orgs", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
+      const startedAt = Date.now();
       const result: any = await db.execute(sql`
         select o.id, o.name, o.slug, uo.role, uo.is_default
         from public.user_organizations uo
@@ -284,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         order by uo.is_default desc, o.name asc
       `);
       const rows = Array.isArray(result) ? result : (result as any).rows;
-      console.log('[ORG][list]', { userId: req.user?.id, count: rows?.length || 0 });
+      console.log('[ORG][list]', { userId: req.user?.id, count: rows?.length || 0, latencyMs: Date.now() - startedAt });
       res.json(rows || []);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch organizations' });

@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { authStorage } from "@/lib/supabase";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -12,9 +13,15 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  const token = authStorage.getToken();
+  const user = authStorage.getUser();
+  const headers: Record<string, string> = {};
+  if (data) headers["Content-Type"] = "application/json";
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (user?.orgId) headers["X-Org-Id"] = user.orgId;
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -29,12 +36,26 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const token = authStorage.getToken();
+    const user = authStorage.getUser();
+    // Namespace cache by orgId by appending a benign query param
+    const baseUrl = queryKey.join("/") as string;
+    const url = user?.orgId ? (baseUrl.includes("?") ? `${baseUrl}&orgId=${user.orgId}` : `${baseUrl}?orgId=${user.orgId}`) : baseUrl;
+    const res = await fetch(url, {
       credentials: "include",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(user?.orgId ? { "X-Org-Id": user.orgId } : {}),
+      },
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
+    }
+    if (res.status === 403) {
+      // lost access; force org selection
+      window.location.href = "/choose-org";
+      return null as any;
     }
 
     await throwIfResNotOk(res);

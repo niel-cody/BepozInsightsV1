@@ -67,10 +67,10 @@
   - [x] 5.4 Keyboard navigation and ARIA roles
 
 - [ ] 6.0 Route Guard & Data Scoping (selectedOrgId required)
-  - [ ] 6.1 Org context/provider exposing `selectedOrgId` and switch method
-  - [ ] 6.2 Guard protected routes; show selector if missing
-  - [ ] 6.3 Ensure all data fetching includes `org_id` filter; adapt hooks/services
-  - [ ] 6.4 Handle lost access mid‑session (403 → prompt to choose another org)
+  - [x] 6.1 Org context/provider exposing `selectedOrgId` and switch method
+  - [x] 6.2 Guard protected routes; show selector if missing
+  - [x] 6.3 Ensure all data fetching includes `org_id` filter; adapt hooks/services
+  - [x] 6.4 Handle lost access mid‑session (403 → prompt to choose another org)
 
 - [ ] 7.0 State, Caching, and Persistence (react‑query + local storage)
   - [ ] 7.1 Namespace react‑query keys by `selectedOrgId`
@@ -85,7 +85,7 @@
   - [ ] 8.4 Visual tests/screenshots for consistency
 
 - [ ] 9.0 Telemetry & Tests (logging, integration/E2E)
-  - [ ] 9.1 Server logs for `/api/orgs` and selection (userId, orgId, latency)
+  - [x] 9.1 Server logs for `/api/orgs` and selection (userId, orgId, latency)
   - [ ] 9.2 Unit tests for API validation and membership logic
   - [ ] 9.3 Integration tests for RLS enforcement (deny cross‑org access)
   - [ ] 9.4 E2E flow: login → choose org → scoped data → switch org → re‑scoped data
