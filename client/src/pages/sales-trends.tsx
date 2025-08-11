@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AuthGuard } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { FilterBar } from "@/components/sales-trends/filter-bar";
 
 // Mock data for the calendar and analytics
 const generateCalendarData = () => {
@@ -166,6 +167,9 @@ export default function SalesTrendsPage() {
           />
           
           <div className="p-6">
+            {/* Filter Bar */}
+            <FilterBar />
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Calendar Heatmap */}
               <div className="lg:col-span-2">
