@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateSQL, generateInsightFromData } from "./services/openai";
 import { setRLSClaims } from "./services/supabase";
+import { aiResponseCache } from "./services/cache";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -312,6 +313,20 @@ Important notes:
 - All monetary values are in AUD
 `;
 
+      // Try cache first
+      const cacheKey = JSON.stringify({
+        orgId: req.user?.orgId,
+        q: aiRequest.query?.trim(),
+        dateRange: aiRequest.dateRange,
+        locationIds: aiRequest.locationIds,
+        channel: aiRequest.channel,
+        orderType: aiRequest.orderType,
+      });
+      const cached = aiResponseCache.get(cacheKey);
+      if (cached) {
+        return res.json(cached as AIQueryResponse);
+      }
+
       // Generate SQL using OpenAI
       const sqlResult = await generateSQL({
         query: aiRequest.query,
@@ -385,6 +400,7 @@ Important notes:
         }
       }
 
+      aiResponseCache.set(cacheKey, response, 15 * 60 * 1000);
       res.json(response);
     } catch (error) {
       console.error('AI query error:', error);

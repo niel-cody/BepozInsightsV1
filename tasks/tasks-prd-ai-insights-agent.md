@@ -44,6 +44,8 @@
   - [ ] 3.3 Add basic unit/integration checks for SQL validation (smoke tests)
   - [x] 3.3 Add basic unit/integration checks for SQL validation (smoke tests)
 - [ ] 4.0 Read‑Only Query Execution with Caching
+  - [x] 4.1 Implement in‑memory cache with TTL (~15m) and request key normalization
+  - [x] 4.2 Integrate cache into `/api/ai/query` response path
 - [ ] 5.0 Insight Formatting: Answer, KPI Callouts, Top Drivers
 - [ ] 6.0 Dashboard UI: AI Panel Enhancements and Error States
 - [ ] 7.0 Observability & Safety: Logging, Auditing, and Limits
