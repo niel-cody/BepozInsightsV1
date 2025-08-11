@@ -11,6 +11,7 @@ import type { AIQueryRequest, AIQueryResponse } from "@shared/schema";
 export function AIQueryPanel() {
   const [query, setQuery] = useState("");
   const [response, setResponse] = useState<AIQueryResponse | null>(null);
+  const [showSQL, setShowSQL] = useState(false);
   const { toast } = useToast();
 
   const aiQueryMutation = useMutation({
@@ -140,6 +141,12 @@ export function AIQueryPanel() {
           {/* AI Response Area */}
           {response ? (
             <div className="bg-slate-50 rounded-lg p-6 space-y-4 ai-response" data-testid="ai-response-container">
+              {/* Error Alert */}
+              {response.error && (
+                <div className="bg-red-50 border border-red-200 text-red-800 rounded p-3 text-sm" data-testid="ai-error-alert">
+                  {response.error}
+                </div>
+              )}
               {/* KPI Callouts */}
               {response.kpis && (
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -181,7 +188,7 @@ export function AIQueryPanel() {
               </div>
 
               {/* Generated SQL */}
-              {response.sql && (
+              {response.sql && showSQL && (
                 <div className="bg-slate-900 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-medium text-slate-200">Generated SQL</p>
@@ -199,6 +206,19 @@ export function AIQueryPanel() {
                   <pre className="text-xs text-green-400 font-mono overflow-x-auto" data-testid="sql-query">
                     {response.sql}
                   </pre>
+                </div>
+              )}
+              {response.sql && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSQL(!showSQL)}
+                    className="text-xs"
+                    data-testid="button-toggle-sql"
+                  >
+                    {showSQL ? 'Hide SQL' : 'Show SQL'}
+                  </Button>
                 </div>
               )}
 
@@ -273,6 +293,11 @@ export function AIQueryPanel() {
                 <MessageCircle className="mx-auto h-8 w-8" />
               </div>
               <p className="text-slate-600">AI responses will appear here. Try asking a question about your sales data!</p>
+              <div className="mt-3">
+                <Button variant="outline" size="sm" onClick={() => setResponse(null)} data-testid="button-clear">
+                  Clear
+                </Button>
+              </div>
             </div>
           )}
         </div>

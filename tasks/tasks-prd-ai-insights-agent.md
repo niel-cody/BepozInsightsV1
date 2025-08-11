@@ -53,6 +53,18 @@
   - [ ] 5.3 Render KPI callouts and drivers in AI panel UI
   - [x] 5.3 Render KPI callouts and drivers in AI panel UI
 - [ ] 6.0 Dashboard UI: AI Panel Enhancements and Error States
+  - [ ] 6.1 Hide SQL by default; add a Show/Hide SQL toggle and keep copy
+  - [x] 6.1 Hide SQL by default; add a Show/Hide SQL toggle and keep copy
+  - [ ] 6.2 Inline error alert in response area when `error` present
+  - [x] 6.2 Inline error alert in response area when `error` present
+  - [ ] 6.3 Improved loading/empty states and a Clear button
+  - [x] 6.3 Improved loading/empty states and a Clear button
 - [ ] 7.0 Observability & Safety: Logging, Auditing, and Limits
+  - [ ] 7.1 Add request/response logging (no PII): orgId, userId, latency, cache, rows, sql length
+  - [ ] 7.2 Capture and log OpenAI usage metadata when available
+  - [ ] 7.3 Enforce output limits (max rows 1000) and redact emails in responses
+  - [x] 7.1 Add request/response logging (no PII): orgId, userId, latency, cache, rows, sql length
+  - [x] 7.2 Capture and log OpenAI usage metadata when available
+  - [x] 7.3 Enforce output limits (max rows 1000) and redact emails in responses
 
 

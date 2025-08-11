@@ -276,6 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Query route
   app.post("/api/ai/query", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
+      const startedAt = Date.now();
       // Attach RLS claims for this request/session if available
       if (req.user?.orgId) {
         await setRLSClaims(req.user.orgId, 'authenticated');
@@ -324,6 +325,8 @@ Important notes:
       });
       const cached = aiResponseCache.get(cacheKey);
       if (cached) {
+        const latency = Date.now() - startedAt;
+        console.log('[AI][cache-hit]', { userId: req.user?.id, orgId: req.user?.orgId, latencyMs: latency, qlen: aiRequest.query.length });
         return res.json(cached as AIQueryResponse);
       }
 
@@ -388,7 +391,7 @@ Important notes:
 
       const response: AIQueryResponse = {
         answer: insight,
-        sql: sqlResult.sql,
+        sql: sqlResult.sql.replace(/([\w.+-]+)@([\w.-]+)\.(\w+)/g, '***@***.***'),
         data: queryData,
         kpis: kpi,
         drivers,
@@ -425,6 +428,14 @@ Important notes:
       }
 
       aiResponseCache.set(cacheKey, response, 15 * 60 * 1000);
+      const latency = Date.now() - startedAt;
+      console.log('[AI][answer]', {
+        userId: req.user?.id,
+        orgId: req.user?.orgId,
+        latencyMs: latency,
+        rows: Array.isArray(queryData) ? queryData.length : 0,
+        sqlLen: response.sql?.length || 0,
+      });
       res.json(response);
     } catch (error) {
       console.error('AI query error:', error);

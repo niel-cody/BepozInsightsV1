@@ -229,7 +229,14 @@ Format currency as AUD and round to nearest dollar.`;
       max_tokens: 200,
     });
 
-    return response.choices[0].message.content || "Unable to generate insight from the data.";
+    const content = response.choices[0].message.content || "Unable to generate insight from the data.";
+    try {
+      const usage = (response as any).usage || (response as any).choices?.[0]?.usage;
+      if (usage) {
+        console.log('[AI][openai-usage]', usage);
+      }
+    } catch (_) {}
+    return content;
 
   } catch (error) {
     console.error('OpenAI insight generation error:', error);
