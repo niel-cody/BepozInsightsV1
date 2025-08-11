@@ -86,57 +86,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTopProducts(dateRange?: { from: Date; to: Date }, locationIds?: string[]): Promise<TopProduct[]> {
-    let query = db
-      .select({
-        id: products.id,
-        name: products.name,
-        category: products.category,
-        quantity: sum(orderItems.quantity).mapWith(Number),
-        revenue: sum(orderItems.netPrice).mapWith(Number),
-      })
-      .from(orderItems)
-      .innerJoin(products, eq(orderItems.productId, products.id))
-      .innerJoin(orders, eq(orderItems.orderId, orders.id))
-      .where(eq(orders.status, 'completed'))
-      .groupBy(products.id, products.name, products.category)
-      .orderBy(desc(sum(orderItems.netPrice)))
-      .limit(10);
-
-    // Add date filter if provided
-    if (dateRange) {
-      query = query.where(and(
-        eq(orders.status, 'completed'),
-        gte(orders.createdAt, dateRange.from),
-        lte(orders.createdAt, dateRange.to)
-      ));
-    }
-
-    // Add location filter if provided
-    if (locationIds && locationIds.length > 0) {
-      query = query.where(and(
-        eq(orders.status, 'completed'),
-        inArray(orders.locationId, locationIds),
-        ...(dateRange ? [gte(orders.createdAt, dateRange.from), lte(orders.createdAt, dateRange.to)] : [])
-      ));
-    }
-
-    return await query;
-  }
-
-  async getKPIData(dateRange?: { from: Date; to: Date }, locationIds?: string[]): Promise<KPIData> {
-    // Current period query
-    let currentQuery = db
-      .select({
-        grossSales: sum(orders.totalAmount).mapWith(Number),
-        netSales: sum(orders.netAmount).mapWith(Number),
-        discounts: sum(orders.discountAmount).mapWith(Number),
-        refunds: sum(orders.refundAmount).mapWith(Number),
-        orderCount: count(orders.id).mapWith(Number),
-      })
-      .from(orders)
-      .where(eq(orders.status, 'completed'));
-
-    // Add filters
+    // Build conditions
     const conditions = [eq(orders.status, 'completed')];
     
     if (dateRange) {
@@ -148,9 +98,49 @@ export class DatabaseStorage implements IStorage {
       conditions.push(inArray(orders.locationId, locationIds));
     }
 
-    if (conditions.length > 1) {
-      currentQuery = currentQuery.where(and(...conditions));
+    const query = db
+      .select({
+        id: products.id,
+        name: products.name,
+        category: sql<string>`COALESCE(${products.category}, '')`,
+        quantity: sum(orderItems.quantity).mapWith(Number),
+        revenue: sum(orderItems.netPrice).mapWith(Number),
+      })
+      .from(orderItems)
+      .innerJoin(products, eq(orderItems.productId, products.id))
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(and(...conditions))
+      .groupBy(products.id, products.name, products.category)
+      .orderBy(desc(sum(orderItems.netPrice)))
+      .limit(10);
+
+    return await query;
+  }
+
+  async getKPIData(dateRange?: { from: Date; to: Date }, locationIds?: string[]): Promise<KPIData> {
+    // Build conditions for current period
+    const conditions = [eq(orders.status, 'completed')];
+    
+    if (dateRange) {
+      conditions.push(gte(orders.createdAt, dateRange.from));
+      conditions.push(lte(orders.createdAt, dateRange.to));
     }
+
+    if (locationIds && locationIds.length > 0) {
+      conditions.push(inArray(orders.locationId, locationIds));
+    }
+
+    // Current period query
+    const currentQuery = db
+      .select({
+        grossSales: sum(orders.totalAmount).mapWith(Number),
+        netSales: sum(orders.netAmount).mapWith(Number),
+        discounts: sum(orders.discountAmount).mapWith(Number),
+        refunds: sum(orders.refundAmount).mapWith(Number),
+        orderCount: count(orders.id).mapWith(Number),
+      })
+      .from(orders)
+      .where(and(...conditions));
 
     const currentData = await currentQuery;
     const current = currentData[0] || {
@@ -223,17 +213,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSalesChartData(dateRange?: { from: Date; to: Date }, locationIds?: string[]): Promise<SalesChartData[]> {
-    let query = db
-      .select({
-        date: sql<string>`DATE(${orders.createdAt})`,
-        netSales: sum(orders.netAmount).mapWith(Number),
-      })
-      .from(orders)
-      .where(eq(orders.status, 'completed'))
-      .groupBy(sql`DATE(${orders.createdAt})`)
-      .orderBy(sql`DATE(${orders.createdAt})`);
-
-    // Add filters
+    // Build conditions
     const conditions = [eq(orders.status, 'completed')];
     
     if (dateRange) {
@@ -245,9 +225,15 @@ export class DatabaseStorage implements IStorage {
       conditions.push(inArray(orders.locationId, locationIds));
     }
 
-    if (conditions.length > 1) {
-      query = query.where(and(...conditions));
-    }
+    const query = db
+      .select({
+        date: sql<string>`DATE(${orders.createdAt})`,
+        netSales: sum(orders.netAmount).mapWith(Number),
+      })
+      .from(orders)
+      .where(and(...conditions))
+      .groupBy(sql`DATE(${orders.createdAt})`)
+      .orderBy(sql`DATE(${orders.createdAt})`);
 
     return await query;
   }
@@ -262,7 +248,7 @@ export class DatabaseStorage implements IStorage {
 
       // Execute the query using raw SQL
       const result = await db.execute(sql.raw(sqlQuery));
-      return result.rows || [];
+      return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('SQL execution error:', error);
       throw new Error(`Query execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

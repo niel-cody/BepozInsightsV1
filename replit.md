@@ -2,6 +2,17 @@
 
 Bepoz AI Insights is a comprehensive hospitality analytics dashboard that provides AI-powered insights for POS data. The application combines a React frontend with an Express backend to deliver real-time analytics, natural language querying capabilities, and interactive data visualizations for restaurant and hospitality businesses. Users can analyze sales data, track KPIs, and generate insights through a dedicated AI chat interface with conversation history.
 
+# Recent Changes
+
+## 2025-08-11: Fixed Application Startup Issues
+- Resolved missing `postgres` package dependency that was preventing the server from starting
+- Removed invalid `@openai/agents` package reference that was blocking npm install
+- Fixed Drizzle ORM query builder issues in storage.ts:
+  - Corrected `.where()` chaining problems by building conditions arrays first
+  - Fixed type compatibility for category field (null vs string) using SQL COALESCE
+  - Updated `executeReadOnlySQL` method to handle result objects properly
+- Application now starts successfully on port 5000
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
