@@ -291,23 +291,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate schema description for OpenAI
       const schemaDescription = `
-        Tables:
-        1. orders: id, location_id, order_number, channel, order_type, subtotal, discount_amount, tax_amount, total_amount, refund_amount, net_amount, customer_name, customer_email, status, created_at, completed_at
-        2. order_items: id, order_id, product_id, quantity, unit_price, total_price, discount_amount, net_price
-        3. products: id, name, category, price, cost, active, created_at
-        4. locations: id, name, address, city, state, country, timezone, created_at
-        
-        Key relationships:
-        - orders.location_id -> locations.id
-        - order_items.order_id -> orders.id
-        - order_items.product_id -> products.id
-        
-        Important notes:
-        - Use net_amount for revenue calculations (excludes refunds)
-        - Filter by orders.status = 'completed' for sales data
-        - Use created_at for date filtering
-        - All monetary values are in AUD
-      `;
+Tables:
+1. till_summaries: id, org_id, venue_name, time_span, first_txn_at, last_txn_at, qty_transactions, average_sale, gross_sales, total_discount, net_sales, net_sales_ex_tax, payment_total, cost_of_sales, profit_amount, profit_percent, qty_cancelled, cancelled_total, qty_returns, returns_total, qty_training, training_total, qty_no_sales, qty_no_sale_after_cancel, no_sale_after_cancel_total, qty_table_refund_after_print, table_refund_after_print_total, created_at, updated_at
+   - Uniqueness: (org_id, time_span, venue_name)
+2. orders: id, location_id, order_number, channel, order_type, subtotal, discount_amount, tax_amount, total_amount, refund_amount, net_amount, customer_name, customer_email, status, created_at, completed_at
+3. order_items: id, order_id, product_id, quantity, unit_price, total_price, discount_amount, net_price
+4. products: id, name, category, price, cost, active, created_at
+5. locations: id, name, address, city, state, country, timezone, created_at
+
+Key relationships:
+- orders.location_id -> locations.id
+- order_items.order_id -> orders.id
+- order_items.product_id -> products.id
+
+Important notes:
+- For high-level daily KPIs, prefer till_summaries
+- Use orders.net_amount for revenue when querying raw orders (excludes refunds)
+- Filter by orders.status = 'completed' for sales data
+- Use created_at for date filtering on orders; use time_span for daily rollups
+- All monetary values are in AUD
+`;
 
       // Generate SQL using OpenAI
       const sqlResult = await generateSQL({

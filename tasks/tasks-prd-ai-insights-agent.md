@@ -37,6 +37,12 @@
   - [ ] 2.6 Document mappings and add TS types if needed in `shared/schema.ts`
   - [x] 2.6 Document mappings and add TS types if needed in `shared/schema.ts`
 - [ ] 3.0 AI SQL Generation and Validation
+  - [ ] 3.1 Provide schema description for `till_summaries` to SQL generator
+  - [x] 3.1 Provide schema description for `till_summaries` to SQL generator
+  - [ ] 3.2 Strengthen guardrails: enforce LIMIT, deny dangerous keywords, and validate table allowlist
+  - [x] 3.2 Strengthen guardrails: enforce LIMIT, deny dangerous keywords, and validate table allowlist
+  - [ ] 3.3 Add basic unit/integration checks for SQL validation (smoke tests)
+  - [x] 3.3 Add basic unit/integration checks for SQL validation (smoke tests)
 - [ ] 4.0 Read‑Only Query Execution with Caching
 - [ ] 5.0 Insight Formatting: Answer, KPI Callouts, Top Drivers
 - [ ] 6.0 Dashboard UI: AI Panel Enhancements and Error States

@@ -24,6 +24,68 @@ export interface SQLGenerationResponse {
   error?: string;
 }
 
+function normalizeIdentifier(identifier: string): string {
+  // Strip quotes and schema prefixes
+  const cleaned = identifier.replace(/^["`']|["`']$/g, "");
+  const parts = cleaned.split(".");
+  return parts[parts.length - 1].toLowerCase();
+}
+
+export function validateAndHardenSQL(originalSQL: string): { sql: string; isValid: boolean; error?: string } {
+  const allowlistedTables = new Set([
+    "till_summaries",
+    "orders",
+    "order_items",
+    "products",
+    "locations",
+  ]);
+
+  let sql = originalSQL.trim();
+
+  // Disallow multiple statements
+  if (sql.split(";").filter(Boolean).length > 1) {
+    return { sql: "", isValid: false, error: "Multiple SQL statements are not allowed" };
+  }
+  // Strip trailing semicolon if present
+  if (sql.endsWith(";")) sql = sql.slice(0, -1);
+
+  const upper = sql.toUpperCase();
+  // Deny dangerous schemas/keywords
+  if (/\b(pg_|INFORMATION_SCHEMA|SYS|MYSQL)\b/i.test(sql)) {
+    return { sql: "", isValid: false, error: "Access to system schemas is not allowed" };
+  }
+  if (/\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|EXEC|CALL|GRANT|REVOKE)\b/i.test(upper)) {
+    return { sql: "", isValid: false, error: "Query contains forbidden keywords" };
+  }
+
+  // Enforce LIMIT caps (<= 1000)
+  if (/\bLIMIT\s+\d+/i.test(sql)) {
+    sql = sql.replace(/\bLIMIT\s+(\d+)/gi, (_m, n) => {
+      const num = parseInt(n, 10);
+      return `LIMIT ${Math.min(num || 0, 1000)}`;
+    });
+  } else {
+    sql = `${sql} LIMIT 100`;
+  }
+
+  // Validate tables referenced in FROM/JOIN are allowlisted
+  const referenced: string[] = [];
+  const tableRegex = /(FROM|JOIN)\s+([\w\."]+)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = tableRegex.exec(sql)) !== null) {
+    referenced.push(normalizeIdentifier(match[2]));
+  }
+  for (const name of referenced) {
+    if (!allowlistedTables.has(name)) {
+      // Heuristic: allow common CTE names that are not base tables
+      if (!/^[a-z_][a-z0-9_]*$/i.test(name) || allowlistedTables.has(name)) continue;
+      return { sql: "", isValid: false, error: `Table not allowed: ${name}` };
+    }
+  }
+
+  return { sql, isValid: true };
+}
+
 export async function generateSQL(request: SQLGenerationRequest): Promise<SQLGenerationResponse> {
   try {
     const systemPrompt = `You are a SQL expert for a POS (Point of Sale) system. Generate safe, read-only SQL queries based on natural language requests.
@@ -113,12 +175,18 @@ Make sure to:
       };
     }
 
-    // Ensure it has a LIMIT clause
-    if (!upperSQL.includes('LIMIT')) {
-      result.sql += ' LIMIT 100';
+    // Harden and validate SQL further
+    const hardened = validateAndHardenSQL(result.sql);
+    if (!hardened.isValid) {
+      return {
+        sql: '',
+        explanation: '',
+        isValid: false,
+        error: hardened.error || 'SQL validation failed',
+      };
     }
 
-    return result;
+    return { ...result, sql: hardened.sql };
 
   } catch (error) {
     console.error('OpenAI SQL generation error:', error);
