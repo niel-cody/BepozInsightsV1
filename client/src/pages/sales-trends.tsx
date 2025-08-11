@@ -165,55 +165,7 @@ export default function SalesTrendsPage() {
             subtitle="Analyze sales patterns and performance trends over time" 
           />
           
-          <div className="p-6 space-y-6">
-            {/* Filter Controls */}
-            <div className="flex items-center gap-4 bg-white p-4 rounded-lg border">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Location:</span>
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                  <SelectTrigger className="w-40" data-testid="select-location">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    <SelectItem value="loc-1">Main Street</SelectItem>
-                    <SelectItem value="loc-2">Mall Plaza</SelectItem>
-                    <SelectItem value="loc-3">Downtown</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Channel:</span>
-                <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-                  <SelectTrigger className="w-40" data-testid="select-channel">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Channels</SelectItem>
-                    <SelectItem value="dine-in">Dine In</SelectItem>
-                    <SelectItem value="takeaway">Takeaway</SelectItem>
-                    <SelectItem value="delivery">Delivery</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Type:</span>
-                <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="w-40" data-testid="select-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="food">Food</SelectItem>
-                    <SelectItem value="beverages">Beverages</SelectItem>
-                    <SelectItem value="merchandise">Merchandise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+          <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Calendar Heatmap */}
               <div className="lg:col-span-2">
