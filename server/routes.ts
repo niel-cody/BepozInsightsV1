@@ -79,7 +79,6 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
 const magicLinkTokens = new Map<string, { email: string; expires: number }>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const HAS_DB = Boolean(process.env.DATABASE_URL);
   const DB_TIMEOUT_MS = 2000;
 
   async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -165,11 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await ensureDemoMemberships(user.id, email);
 
       // Determine default org
-      let defaultOrgId = await getDefaultOrgIdForUser(user.id);
-      if (!defaultOrgId && !HAS_DB) {
-        // Demo fallback when no database configured
-        defaultOrgId = 'org-1';
-      }
+      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
       // Generate JWT
       const payload: any = { userId: user.id, email: user.email };
       if (defaultOrgId) payload.org_id = defaultOrgId;
@@ -257,10 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await ensureDemoMemberships(user.id, user.email);
 
       // Determine default org
-      let defaultOrgId = await getDefaultOrgIdForUser(user.id);
-      if (!defaultOrgId && !HAS_DB) {
-        defaultOrgId = 'org-1';
-      }
+      const defaultOrgId = await getDefaultOrgIdForUser(user.id);
       // Generate JWT
       const payload: any = { userId: user.id, email: user.email };
       if (defaultOrgId) payload.org_id = defaultOrgId;
@@ -303,13 +295,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(429).json({ message: 'Too many org switch attempts, please try again shortly' });
       }
       const { organizationId } = z.object({ organizationId: z.string() }).parse(req.body);
-      if (!HAS_DB) {
-        // Demo fallback: accept any org and issue token
-        const newToken = jwt.sign({ userId: req.user!.id, email: req.user!.email, org_id: organizationId }, JWT_SECRET, { expiresIn: '7d' });
-        await setRLSClaims(organizationId, 'authenticated', req.user!.id);
-        return res.json({ accessToken: newToken, organizationId });
-      }
-
       // Validate membership
       const membership: any = await withTimeout(db.execute(sql`
         select 1 from public.user_organizations
@@ -317,10 +302,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit 1
       `), DB_TIMEOUT_MS);
       let isMember = Array.isArray(membership) ? membership.length > 0 : (membership as any).rows?.length > 0;
-      // Demo/dev resilience: if membership not found (e.g., ephemeral user ids), allow in non-production
-      if (!isMember && process.env.NODE_ENV !== 'production') {
-        isMember = true;
-      }
       if (!isMember) {
         return res.status(403).json({ message: 'Not a member of this organization' });
       }
@@ -347,15 +328,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard routes
   app.get("/api/orgs", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
-      if (!HAS_DB) {
-        const demoOrgs = [
-          { id: 'org-1', name: 'Bepoz Demo Co', slug: 'demo', role: 'manager', is_default: true },
-          { id: 'org-2', name: 'Northside Cafe Group', slug: 'northside', role: 'manager', is_default: false },
-          { id: 'org-3', name: 'Harbour Eats', slug: 'harbour', role: 'manager', is_default: false },
-        ];
-        return res.json(demoOrgs);
-      }
-      // If DB is configured, fetch real orgs tied to the user
       const startedAt = Date.now();
       const result: any = await withTimeout(db.execute(sql`
         select o.id, o.name, o.slug, uo.role, uo.is_default
@@ -366,26 +338,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `), DB_TIMEOUT_MS);
       const rows = Array.isArray(result) ? result : (result as any).rows;
       console.log('[ORG][list]', { userId: req.user?.id, count: rows?.length || 0, latencyMs: Date.now() - startedAt });
-      if (!rows || rows.length === 0) {
-        // Fallback demo orgs when none found (dev/demo resilience)
-        const demoOrgs = [
-          { id: 'org-1', name: 'Bepoz Demo Co', slug: 'demo', role: 'manager', is_default: true },
-          { id: 'org-2', name: 'Northside Cafe Group', slug: 'northside', role: 'manager', is_default: false },
-          { id: 'org-3', name: 'Harbour Eats', slug: 'harbour', role: 'manager', is_default: false },
-        ];
-        return res.json(demoOrgs);
-      }
       res.json(rows);
     } catch (error) {
-      // In dev/demo, return fallback orgs on DB failure
-      if (process.env.NODE_ENV !== 'production') {
-        const demoOrgs = [
-          { id: 'org-1', name: 'Bepoz Demo Co', slug: 'demo', role: 'manager', is_default: true },
-          { id: 'org-2', name: 'Northside Cafe Group', slug: 'northside', role: 'manager', is_default: false },
-          { id: 'org-3', name: 'Harbour Eats', slug: 'harbour', role: 'manager', is_default: false },
-        ];
-        return res.json(demoOrgs);
-      }
       res.status(500).json({ message: 'Failed to fetch organizations' });
     }
   });

@@ -1,5 +1,4 @@
 import { eq, desc, sum, sql, and, gte, lte, inArray, count } from "drizzle-orm";
-import { MemoryStorage } from "./storage/memory-storage";
 import { db, schema } from "./services/supabase";
 import { 
   type User, 
@@ -271,6 +270,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Choose storage: prefer database when configured
-const useDB = Boolean(process.env.DATABASE_URL);
-export const storage: IStorage = useDB ? new DatabaseStorage() : new MemoryStorage();
+// Always use database-backed storage
+export const storage: IStorage = new DatabaseStorage();
