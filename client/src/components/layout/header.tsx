@@ -22,10 +22,10 @@ export function Header({ title, subtitle }: HeaderProps) {
         <Link href="/ai-chat">
           <Button 
             size="sm" 
-            className="relative flex items-center gap-2 bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 hover:from-purple-600 hover:via-blue-600 hover:to-cyan-600 text-white border-0 overflow-hidden group animate-shimmer"
+            className="relative flex items-center gap-2 text-white border-0 overflow-hidden group animate-shimmer hover:shadow-lg transition-shadow duration-300"
             data-testid="button-quick-ai-chat"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-shimmer-sweep"></div>
+            <div className="absolute inset-0 animate-shimmer-sweep"></div>
             <Sparkles className="w-4 h-4 animate-pulse" />
             AI Chat
           </Button>
