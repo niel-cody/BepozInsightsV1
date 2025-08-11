@@ -65,6 +65,40 @@ export const users = pgTable("users", {
   lastLoginAt: timestamp("last_login_at"),
 });
 
+// Till summaries (normalized mapping)
+export const tillSummaries = pgTable("till_summaries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orgId: text("org_id"),
+  venueName: text("venue_name"),
+  timeSpan: text("time_span"),
+  qtyTransactions: integer("qty_transactions"),
+  grossSales: decimal("gross_sales", { precision: 14, scale: 2 }),
+  totalDiscount: decimal("total_discount", { precision: 14, scale: 2 }),
+  netSales: decimal("net_sales", { precision: 14, scale: 2 }),
+  netSalesExTax: decimal("net_sales_ex_tax", { precision: 14, scale: 2 }),
+  paymentTotal: decimal("payment_total", { precision: 14, scale: 2 }),
+  costOfSales: decimal("cost_of_sales", { precision: 14, scale: 2 }),
+  profitAmount: decimal("profit_amount", { precision: 14, scale: 2 }),
+  profitPercent: decimal("profit_percent", { precision: 5, scale: 2 }),
+  firstTxnAt: timestamp("first_txn_at", { withTimezone: true }),
+  lastTxnAt: timestamp("last_txn_at", { withTimezone: true }),
+  lastOperator: text("last_operator"),
+  averageSale: decimal("average_sale", { precision: 14, scale: 2 }),
+  qtyCancelled: integer("qty_cancelled"),
+  cancelledTotal: decimal("cancelled_total", { precision: 14, scale: 2 }),
+  qtyReturns: integer("qty_returns"),
+  returnsTotal: decimal("returns_total", { precision: 14, scale: 2 }),
+  qtyTraining: integer("qty_training"),
+  trainingTotal: decimal("training_total", { precision: 14, scale: 2 }),
+  qtyNoSales: integer("qty_no_sales"),
+  qtyNoSaleAfterCancel: integer("qty_no_sale_after_cancel"),
+  noSaleAfterCancelTotal: decimal("no_sale_after_cancel_total", { precision: 14, scale: 2 }),
+  qtyTableRefundAfterPrint: integer("qty_table_refund_after_print"),
+  tableRefundAfterPrintTotal: decimal("table_refund_after_print_total", { precision: 14, scale: 2 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
 // Insert schemas
 export const insertLocationSchema = createInsertSchema(locations).omit({
   id: true,
@@ -107,6 +141,8 @@ export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type TillSummary = typeof tillSummaries.$inferSelect;
 
 // API response types
 export type KPIData = {

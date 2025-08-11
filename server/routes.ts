@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateSQL, generateInsightFromData } from "./services/openai";
+import { setRLSClaims } from "./services/supabase";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -15,6 +16,7 @@ interface AuthenticatedRequest extends Express.Request {
     id: string;
     email: string;
     role: string;
+    orgId?: string;
     locationAccess: string[];
   };
 }
@@ -39,8 +41,13 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Express.Respons
       id: user.id,
       email: user.email,
       role: user.role,
+      orgId: (decoded as any).org_id,
       locationAccess: user.locationAccess || [],
     };
+    // Best-effort: attach org_id to DB session for RLS
+    if (req.user.orgId) {
+      try { await setRLSClaims(req.user.orgId, 'authenticated'); } catch (_) {}
+    }
     
     next();
   } catch (error) {
@@ -76,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate JWT
       const accessToken = jwt.sign(
-        { userId: user.id, email: user.email },
+        { userId: user.id, email: user.email, org_id: user.id.split('-')[0] || 'org-demo' },
         JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -159,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate JWT
       const accessToken = jwt.sign(
-        { userId: user.id, email: user.email },
+        { userId: user.id, email: user.email, org_id: user.id.split('-')[0] || 'org-demo' },
         JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -268,6 +275,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Query route
   app.post("/api/ai/query", authenticateToken, async (req: AuthenticatedRequest, res) => {
     try {
+      // Attach RLS claims for this request/session if available
+      if (req.user?.orgId) {
+        await setRLSClaims(req.user.orgId, 'authenticated');
+      }
       const aiRequest = req.body as AIQueryRequest;
       
       if (!aiRequest.query || !aiRequest.query.trim()) {

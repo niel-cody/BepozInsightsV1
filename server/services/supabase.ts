@@ -10,3 +10,22 @@ const readOnlySQL = neon(process.env.DATABASE_URL || '');
 export const readOnlyDB = drizzle(readOnlySQL, { schema });
 
 export { schema };
+
+// Helper to set Supabase RLS JWT claims for the current session
+// This enables policies that reference auth.jwt()->>'org_id'
+export async function setRLSClaims(orgId: string, role: 'authenticated' | 'service_role' = 'authenticated') {
+  if (!process.env.DATABASE_URL) return;
+  try {
+    // Supabase's auth.jwt() reads from request.jwt.claims
+    const claims = { role, org_id: orgId };
+    // Use db.execute to set the config for this session
+    await db.execute(
+      // @ts-ignore drizzle sql raw string
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // Set as text; auth.jwt() will parse JSON
+      { sql: `select set_config('request.jwt.claims', '${JSON.stringify(claims)}', true)` }
+    );
+  } catch (_) {
+    // Best-effort; ignore in environments without DB
+  }
+}
