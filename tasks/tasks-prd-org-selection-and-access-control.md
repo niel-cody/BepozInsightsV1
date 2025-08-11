@@ -36,11 +36,11 @@
   - [x] 1.6 Seed sample orgs/memberships for development
 
 - [ ] 2.0 Auth Token & Session Handling for org_id
-  - [ ] 2.1 Include `org_id` claim in JWT on login when determinable (last‑used); else omit
-  - [ ] 2.2 Implement secure token refresh on org selection/switch (new JWT with `org_id`)
-  - [ ] 2.3 Validate membership on selection to prevent cross‑org escalation
-  - [ ] 2.4 Fallback: set `request.jwt.claims` per request for RLS in server if JWT not refreshed
-  - [ ] 2.5 Document token shape and rotation behavior
+  - [x] 2.1 Include `org_id` claim in JWT on login when determinable (last‑used); else omit
+  - [x] 2.2 Implement secure token refresh on org selection/switch (new JWT with `org_id`)
+  - [x] 2.3 Validate membership on selection to prevent cross‑org escalation
+  - [x] 2.4 Fallback: set `request.jwt.claims` per request for RLS in server if JWT not refreshed
+  - [x] 2.5 Document token shape and rotation behavior
 
 - [ ] 3.0 Organization APIs (`/api/orgs`, `/api/orgs/select`)
   - [ ] 3.1 GET `/api/orgs`: return organizations for user with role and `is_default`
