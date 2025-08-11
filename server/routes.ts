@@ -355,6 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ];
         return res.json(demoOrgs);
       }
+      // If DB is configured, fetch real orgs tied to the user
       const startedAt = Date.now();
       const result: any = await withTimeout(db.execute(sql`
         select o.id, o.name, o.slug, uo.role, uo.is_default
