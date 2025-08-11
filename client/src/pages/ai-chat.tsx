@@ -201,17 +201,7 @@ export default function AIChatPage() {
               <div className="lg:col-span-1">
                 <Card className="h-full">
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Conversations</CardTitle>
-                      <Button 
-                        size="sm" 
-                        onClick={startNewConversation}
-                        data-testid="button-new-chat"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Chat
-                      </Button>
-                    </div>
+                    <CardTitle className="text-lg">Conversations</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
